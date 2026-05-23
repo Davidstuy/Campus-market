@@ -1,0 +1,23 @@
+package com.campusmarket.favorite.entity;
+
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@TableName("favorite")
+public class Favorite {
+
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    @TableField("user_id")
+    private Long userId;
+
+    @TableField("product_id")
+    private Long productId;
+
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+}

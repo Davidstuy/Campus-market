@@ -1,0 +1,31 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
+
+# 自定义配置：JWT 密钥和文件上传路径
+campus-market:
+  jwt:
+    secret: campus-market-secret-key-2024-change-in-production
+    expiration: 604800000  # 7 天（毫秒）
+  upload:
+    path: ./uploads
+    allowed-types: jpg,jpeg,png,gif,webp
+
+# MyBatis-Plus 全局配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true     # 数据库下划线 ↔ Java 驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # SQL 日志输出到控制台
+  global-config:
+    db-config:
+      id-type: auto                         # 主键自增
+      logic-delete-field: deleted           # 逻辑删除字段
