@@ -304,8 +304,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      */
     @Override
     public void updateProductStatus(Long productId, String status, Long sellerId) {
-        if (!"SOLD".equals(status) && !"DELISTED".equals(status)) {
-            throw new BusinessException(400, "状态值无效，仅支持 SOLD 或 DELISTED");
+        if (!"SOLD".equals(status) && !"DELISTED".equals(status)
+                && !"ACTIVE".equals(status)
+        ) {
+            throw new BusinessException(400, "状态值无效，仅支持 SOLD 或 DELISTED 或 ACTIVE");
         }
 
         Product product = this.getById(productId);
