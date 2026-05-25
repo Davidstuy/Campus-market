@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS `product` (
     contact_qq      VARCHAR(20)  DEFAULT ''      COMMENT '联系方式-QQ',
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_category (category_id),
-    INDEX idx_seller (seller_id),
-    INDEX idx_status (status)
+    INDEX idx_status_created (status, created_at),
+    INDEX idx_status_cat_created (status, category_id, created_at),
+    INDEX idx_seller_created (seller_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品表';
 
 -- 商品图片表
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `product_image` (
     url        VARCHAR(500) NOT NULL COMMENT '图片 URL',
     sort_order INT          DEFAULT 0 COMMENT '排序序号',
     created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_product (product_id)
+    INDEX idx_product_sort (product_id, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品图片表';
 
 -- 收藏表

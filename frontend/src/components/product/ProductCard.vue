@@ -1,7 +1,7 @@
 <template>
   <div class="product-card" @click="$router.push(`/products/${product.id}`)">
     <el-image
-      :src="product.coverImage || '/placeholder.svg'"
+      :src="thumbUrl(product.coverImage)"
       fit="cover"
       class="cover"
     >
@@ -42,6 +42,11 @@ const props = withDefaults(defineProps<{
   product: Product
   showFavorite?: boolean
 }>(), { showFavorite: false })
+
+const thumbUrl = (url: string) => {
+  if (!url || url === '/placeholder.svg') return url
+  return url.replace('/v1/files/', '/v1/files/thumb/')
+}
 
 const emit = defineEmits<{
   unfavorited: [productId: number]

@@ -97,7 +97,10 @@ const fetchData = async () => {
       sort: sort.value,
     })
     products.value = data.records
+    total.value = data.total
+    loading.value = false
 
+    // 收藏状态异步加载，不阻塞商品显示
     if (isLoggedIn.value && data.records.length > 0) {
       const ids = data.records.map(p => p.id)
       const favMap = await favoriteApi.check(ids)
@@ -105,18 +108,18 @@ const fetchData = async () => {
         p.isFavorited = favMap[p.id] || false
       })
     }
-
-    total.value = data.total
   } catch {
     error.value = true
-  } finally {
     loading.value = false
   }
 }
 
 onMounted(async () => {
-  categories.value = await categoryApi.list()
-  fetchData()
+  const [, catData] = await Promise.all([
+    fetchData(),
+    categoryApi.list(),
+  ])
+  categories.value = catData
 })
 </script>
 

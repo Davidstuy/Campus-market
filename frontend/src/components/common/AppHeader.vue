@@ -4,7 +4,6 @@
       <router-link to="/" class="logo">校园二手交易</router-link>
       <nav class="nav-links">
         <router-link to="/products">浏览商品</router-link>
-        <router-link v-if="auth.isLoggedIn()" to="/publish">发布商品</router-link>
       </nav>
       <div class="user-area">
         <template v-if="auth.isLoggedIn()">
@@ -23,6 +22,9 @@
                 </el-dropdown-item>
                 <el-dropdown-item>
                   <router-link to="/profile/favorites">我的收藏</router-link>
+                </el-dropdown-item>
+                 <el-dropdown-item>
+                  <router-link  to="/publish">发布商品</router-link>
                 </el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
               </el-dropdown-menu>

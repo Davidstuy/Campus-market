@@ -25,13 +25,13 @@
       <div class="images-section">
         <el-image
           v-if="images.length === 0"
-          :src="product.coverImage || '/placeholder.svg'"
+          :src="thumbUrl(product.coverImage)"
           fit="cover"
           class="main-image"
         />
         <el-carousel v-else class="main-image" trigger="click">
           <el-carousel-item v-for="img in images" :key="img.id">
-            <el-image :src="img.url" fit="cover" style="width: 100%; height: 100%" />
+            <el-image :src="thumbUrl(img.url)" fit="cover" style="width: 100%; height: 100%" />
           </el-carousel-item>
         </el-carousel>
       </div>
@@ -84,6 +84,11 @@ const error = ref(false)
 const product = ref<Product | null>(null)
 const images = ref<ProductImage[]>([])
 const statusMap = PRODUCT_STATUS
+
+const thumbUrl = (url: string) => {
+  if (!url || url === '/placeholder.svg') return url
+  return url.replace('/v1/files/', '/v1/files/thumb/')
+}
 
 const fetchData = async () => {
   loading.value = true

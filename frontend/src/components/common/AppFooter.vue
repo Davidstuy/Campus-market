@@ -1,6 +1,6 @@
 <template>
   <footer class="app-footer">
-    <p>&copy; 2024 校园二手交易平台 — 学习项目</p>
+    <p>&copy; 2026 校园二手交易平台</p>
   </footer>
 </template>
 

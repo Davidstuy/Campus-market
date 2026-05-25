@@ -62,7 +62,7 @@
             <el-button size="small" text type="primary" @click="$router.push(`/products/${row.id}`)">
               查看
             </el-button>
-            <el-button size="small" text type="primary" @click="openEdit(row)">
+            <el-button size="small" text type="primary" :disabled="row.status !== 'ACTIVE'" @click="openEdit(row)">
               编辑
             </el-button>
             <template v-if="row.status === 'ACTIVE'">
@@ -71,6 +71,18 @@
               </el-button>
               <el-button size="small" text type="info" @click="updateStatus(row.id, 'DELISTED')">
                 下架
+              </el-button>
+            </template>
+            <template v-else-if="row.status === 'SOLD'">
+              <el-button size="small" text type="success" @click="updateStatus(row.id, 'ACTIVE')">
+                重新上架
+              </el-button>
+            </template>
+
+            <!-- 4. 如果是下架状态，也可以考虑显示“重新上架” -->
+            <template v-else-if="row.status === 'DELISTED'">
+              <el-button size="small" text type="success" @click="updateStatus(row.id, 'ACTIVE')">
+                重新上架
               </el-button>
             </template>
             <el-button size="small" text type="danger" @click="handleDelete(row.id)">
@@ -125,7 +137,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { productApi } from '@/api/modules/product'
 import { categoryApi } from '@/api/modules/category'
@@ -158,7 +169,11 @@ const fetchData = async () => {
 
 // ====== 状态更新 ======
 const updateStatus = async (id: number, status: string) => {
-  const label = status === 'SOLD' ? '标记已售' : '下架'
+   // 优化提示文字逻辑
+  let label = ''
+  if (status === 'SOLD') label = '标记已售'
+  else if (status === 'ACTIVE') label = '重新上架'
+  else label = '下架'
   try {
     await ElMessageBox.confirm(`确定要${label}该商品吗？`, '提示', { type: 'warning' })
     await productApi.updateStatus(id, status)

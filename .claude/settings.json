@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "TaskCreate(*)",
+      "TaskUpdate(*)",
+      "Bash(npx vue-tsc *)"
+    ]
+  }
+}

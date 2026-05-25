@@ -113,7 +113,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules, UploadFile, UploadUserFile } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { productApi } from '@/api/modules/product'

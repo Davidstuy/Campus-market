@@ -43,7 +43,7 @@
     <!-- 商品列表 -->
     <div v-else v-loading="loading" class="product-grid">
       <template v-if="!loading && products.length === 0">
-        <el-empty description="暂无商品，快去发布第一个吧" />
+        <el-empty class="empty-state" description="暂无商品，快去发布第一个吧" />
       </template>
       <ProductCard
         v-for="product in products"
@@ -83,7 +83,9 @@ const fetchData = async () => {
     ])
     products.value = productData.records
     categories.value = categoryData
+    loading.value = false
 
+    // 收藏状态异步加载，不阻塞商品显示
     if (isLoggedIn.value && productData.records.length > 0) {
       const ids = productData.records.map(p => p.id)
       const favMap = await favoriteApi.check(ids)
@@ -93,7 +95,6 @@ const fetchData = async () => {
     }
   } catch {
     error.value = true
-  } finally {
     loading.value = false
   }
 }
@@ -124,5 +125,16 @@ const search = () => fetchData()
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
   min-height: 200px;
+}
+/* 在 <style scoped> 中添加 */
+.empty-state {
+  /* 让元素占据整个网格容器的宽度 */
+  grid-column: 1 / -1; 
+  /* 确保内容水平居中 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* 可选：增加一些上下间距，避免太贴顶或贴底 */
+  padding: 40px 0;
 }
 </style>

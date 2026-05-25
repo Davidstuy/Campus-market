@@ -68,7 +68,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import type { UploadProps } from 'element-plus'
 import { userApi } from '@/api/modules/user'
 

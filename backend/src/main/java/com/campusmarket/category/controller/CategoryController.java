@@ -24,10 +24,7 @@ public class CategoryController {
 
     @GetMapping("/categories")
     public ApiResult<List<Category>> list() {
-        // list() 按 sort_order 排序
-        List<Category> categories = categoryService.lambdaQuery()
-                .orderByAsc(Category::getSortOrder)
-                .list();
+        List<Category> categories = categoryService.list();
         return ApiResult.success(categories);
     }
 }

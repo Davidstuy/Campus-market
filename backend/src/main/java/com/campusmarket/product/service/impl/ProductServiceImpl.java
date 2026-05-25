@@ -16,6 +16,8 @@ import com.campusmarket.product.service.ProductService;
 import com.campusmarket.user.entity.User;
 import com.campusmarket.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      * MyBatis-Plus 分页需要配置 PaginationInterceptor（MyBatis-Plus 3.5.x 已自动配置）
      */
     @Override
+    @Cacheable(value = "products",
+               key = "'page_' + #pageNum + '_' + #size + '_' + #categoryId + '_' + #sort",
+               condition = "#keyword == null",
+               unless = "#result.records.isEmpty()")
     public Page<ProductVO> listProducts(int pageNum, int size, Long categoryId, String keyword, String sort) {
         // 1. 构建查询条件
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
@@ -114,6 +120,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      * 查询商品详情（含卖家、分类、图片、是否收藏）
      */
     @Override
+    @Cacheable(value = "product_detail", key = "#productId", unless = "#result == null")
     public ProductVO getProductDetail(Long productId) {
         Product product = this.getById(productId);
         if (product == null || !"ACTIVE".equals(product.getStatus())) {
@@ -151,6 +158,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      */
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductVO createProduct(CreateProductRequest request, Long sellerId) {
         // 1. 保存商品主记录
         Product product = new Product();
@@ -237,6 +245,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      */
     @Override
     @Transactional
+    @CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public ProductVO updateProduct(Long productId, CreateProductRequest request, Long sellerId) {
         Product product = this.getById(productId);
         if (product == null) {
@@ -284,6 +293,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      */
     @Override
     @Transactional
+    @CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public void deleteProduct(Long productId, Long sellerId) {
         Product product = this.getById(productId);
         if (product == null) {
@@ -303,6 +313,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      * 更新商品状态 — 校验所有权后修改 status 字段
      */
     @Override
+    @CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public void updateProductStatus(Long productId, String status, Long sellerId) {
         if (!"SOLD".equals(status) && !"DELISTED".equals(status)
                 && !"ACTIVE".equals(status)
