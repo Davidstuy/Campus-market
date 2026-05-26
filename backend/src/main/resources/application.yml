@@ -29,6 +29,13 @@ campus-market:
   upload:
     path: ./uploads
     allowed-types: jpg,jpeg,png,gif,webp
+    oss:
+      endpoint:
+      access-key-id:
+      access-key-secret:
+      bucket-name:
+      domain:
+      # 以上 OSS 配置请在 application-dev.yml 中填写实际值
 
 # MyBatis-Plus 全局配置
 mybatis-plus:
