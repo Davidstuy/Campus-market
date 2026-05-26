@@ -2,6 +2,9 @@ server:
   port: 8080
   servlet:
     context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
 
 spring:
   profiles:
@@ -10,16 +13,22 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 50MB
+  datasource:
+    hikari:
+      connection-timeout: 3000
+      maximum-pool-size: 10
   # Redis 连接池
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
+      timeout: 3000ms
       lettuce:
         pool:
           max-active: 8
           max-idle: 8
-          min-idle: 0
+          min-idle: 2
+          max-wait: 3000ms
 
 # 自定义配置：JWT 密钥和文件上传路径
 campus-market:
