@@ -14,7 +14,6 @@ import com.campusmarket.product.mapper.ProductMapper;
 import com.campusmarket.user.entity.User;
 import com.campusmarket.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,7 +69,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional
-    @CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public OrderVO payOrder(Long orderId, Long buyerId) {
         Order order = getAndCheckOwnership(orderId, buyerId, true);
         if (!"PENDING".equals(order.getStatus())) {
@@ -80,13 +78,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setStatus("PAID");
         order.setPaidAt(LocalDateTime.now());
         this.updateById(order);
-
-        // 支付成功 → 商品自动售出
-        Product product = productMapper.selectById(order.getProductId());
-        if (product != null) {
-            product.setStatus("SOLD");
-            productMapper.updateById(product);
-        }
 
         return buildOrderVO(order);
     }
