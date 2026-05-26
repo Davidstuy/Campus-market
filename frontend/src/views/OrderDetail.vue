@@ -87,7 +87,7 @@
           </el-button>
         </template>
 
-        <el-button @click="$router.back()">返回</el-button>
+        <el-button @click="$router.push(isBuyer ? '/orders' : '/profile/sales')">返回</el-button>
       </div>
     </div>
   </div>

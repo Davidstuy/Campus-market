@@ -80,7 +80,6 @@ const fetchData = async () => {
   try {
     const productId = Number(route.params.productId)
     product.value = await productApi.detail(productId)
-    if (!product.value) error.value = true
   } catch {
     error.value = true
   } finally {
