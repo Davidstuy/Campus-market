@@ -45,6 +45,11 @@ const props = withDefaults(defineProps<{
 
 const thumbUrl = (url: string) => {
   if (!url || url === '/placeholder.svg') return url
+  // OSS URL: 使用阿里云图片处理服务缩略
+  if (url.includes('aliyuncs.com')) {
+    return url + '?x-oss-process=image/resize,m_lfit,w_400'
+  }
+  // 本地路径：使用本地缩略图端点
   return url.replace('/v1/files/', '/v1/files/thumb/')
 }
 

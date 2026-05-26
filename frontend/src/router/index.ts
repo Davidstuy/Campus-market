@@ -46,6 +46,36 @@ const router = createRouter({
           component: () => import('@/views/Favorites.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          path: 'checkout/:productId',
+          name: 'Checkout',
+          component: () => import('@/views/Checkout.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'payment/:orderId',
+          name: 'Payment',
+          component: () => import('@/views/Payment.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'orders',
+          name: 'MyOrders',
+          component: () => import('@/views/MyOrders.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'orders/:id',
+          name: 'OrderDetail',
+          component: () => import('@/views/OrderDetail.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'profile/sales',
+          name: 'SellerOrders',
+          component: () => import('@/views/SellerOrders.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
     {

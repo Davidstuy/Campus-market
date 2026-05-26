@@ -58,6 +58,13 @@
           >
             {{ product.isFavorited ? '已收藏' : '收藏' }}
           </el-button>
+          <el-button
+            v-if="canBuy"
+            type="danger"
+            @click="$router.push(`/checkout/${product.id}`)"
+          >
+            立即购买
+          </el-button>
         </div>
 
         <el-descriptions :column="1" border class="desc-section">
@@ -71,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { productApi } from '@/api/modules/product'
 import { favoriteApi } from '@/api/modules/favorite'
@@ -85,8 +92,26 @@ const product = ref<Product | null>(null)
 const images = ref<ProductImage[]>([])
 const statusMap = PRODUCT_STATUS
 
+const currentUserId = computed(() => {
+  const raw = localStorage.getItem('user')
+  if (!raw) return 0
+  return JSON.parse(raw).id as number
+})
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+const canBuy = computed(() =>
+  isLoggedIn.value &&
+  product.value &&
+  product.value.status === 'ACTIVE' &&
+  product.value.sellerId !== currentUserId.value
+)
+
 const thumbUrl = (url: string) => {
   if (!url || url === '/placeholder.svg') return url
+  // OSS URL: 使用阿里云图片处理服务缩略
+  if (url.includes('aliyuncs.com')) {
+    return url + '?x-oss-process=image/resize,m_lfit,w_400'
+  }
+  // 本地路径：使用本地缩略图端点
   return url.replace('/v1/files/', '/v1/files/thumb/')
 }
 

@@ -26,6 +26,12 @@
                  <el-dropdown-item>
                   <router-link  to="/publish">发布商品</router-link>
                 </el-dropdown-item>
+                <el-dropdown-item>
+                  <router-link to="/orders">我的订单</router-link>
+                </el-dropdown-item>
+                <el-dropdown-item>
+                  <router-link to="/profile/sales">我的卖出</router-link>
+                </el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>

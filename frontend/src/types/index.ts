@@ -86,6 +86,35 @@ export interface Favorite {
   product?: Product
 }
 
+// ============ 订单 ============
+export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED'
+
+export interface OrderVO {
+  id: number
+  orderNo: string
+  buyerId: number
+  sellerId: number
+  productId: number
+  productTitle: string
+  productPrice: number
+  productCover: string
+  status: OrderStatus
+  buyerRemark: string
+  paidAt: string | null
+  shippedAt: string | null
+  completedAt: string | null
+  cancelledAt: string | null
+  createdAt: string
+  updatedAt: string
+  buyer?: User
+  seller?: User
+}
+
+export interface CreateOrderRequest {
+  productId: number
+  buyerRemark?: string
+}
+
 // ============ 通用 ============
 export interface ApiResponse<T = unknown> {
   code: number
