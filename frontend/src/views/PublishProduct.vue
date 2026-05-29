@@ -1,13 +1,11 @@
 <template>
   <div class="publish-page">
-    <h2>发布商品</h2>
+    <h2 class="page-title">发布商品</h2>
 
-    <!-- 加载态：分类下拉骨架 -->
     <template v-if="loading">
       <el-skeleton :rows="6" animated style="max-width: 700px" />
     </template>
 
-    <!-- 错误态：分类加载失败 -->
     <el-result
       v-else-if="loadError"
       status="error"
@@ -19,94 +17,94 @@
       </template>
     </el-result>
 
-    <!-- 正常态：表单 -->
-    <el-form
-      v-else
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      style="max-width: 700px"
-    >
-      <el-form-item label="标题" prop="title">
-        <el-input v-model="form.title" placeholder="请输入商品标题" maxlength="50" show-word-limit />
-      </el-form-item>
+    <div v-else class="publish-card">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="100px"
+        style="max-width: 700px"
+      >
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="form.title" placeholder="请输入商品标题" maxlength="50" show-word-limit />
+        </el-form-item>
 
-      <el-form-item label="分类" prop="categoryId">
-        <el-select v-model="form.categoryId" placeholder="请选择分类">
-          <el-option
-            v-for="cat in categories"
-            :key="cat.id"
-            :label="cat.name"
-            :value="cat.id"
+        <el-form-item label="分类" prop="categoryId">
+          <el-select v-model="form.categoryId" placeholder="请选择分类">
+            <el-option
+              v-for="cat in categories"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="价格" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" :step="10" placeholder="请输入价格" />
+        </el-form-item>
+
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="4"
+            placeholder="请描述商品成色、使用情况等"
+            maxlength="500"
+            show-word-limit
           />
-        </el-select>
-      </el-form-item>
+        </el-form-item>
 
-      <el-form-item label="价格" prop="price">
-        <el-input-number v-model="form.price" :min="0" :precision="2" :step="10" placeholder="请输入价格" />
-      </el-form-item>
+        <el-form-item label="封面图">
+          <el-upload
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :on-success="onCoverSuccess"
+            :on-remove="onCoverRemove"
+            :limit="1"
+            :file-list="coverFileList"
+            list-type="picture"
+            accept="image/*"
+          >
+            <el-button type="primary">上传封面图</el-button>
+            <template #tip>
+              <div class="el-upload__tip">建议尺寸 800×800，支持 JPG/PNG/WebP</div>
+            </template>
+          </el-upload>
+        </el-form-item>
 
-      <el-form-item label="描述" prop="description">
-        <el-input
-          v-model="form.description"
-          type="textarea"
-          :rows="4"
-          placeholder="请描述商品成色、使用情况等"
-          maxlength="500"
-          show-word-limit
-        />
-      </el-form-item>
+        <el-form-item label="商品图片">
+          <el-upload
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :on-success="onImageSuccess"
+            :on-remove="onImageRemove"
+            :file-list="imageFileList"
+            list-type="picture-card"
+            accept="image/*"
+            multiple
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <div class="el-upload__tip">最多上传 9 张，第一张将作为封面展示</div>
+        </el-form-item>
 
-      <el-form-item label="封面图">
-        <el-upload
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          :on-success="onCoverSuccess"
-          :on-remove="onCoverRemove"
-          :limit="1"
-          :file-list="coverFileList"
-          list-type="picture"
-          accept="image/*"
-        >
-          <el-button type="primary">上传封面图</el-button>
-          <template #tip>
-            <div class="el-upload__tip">建议尺寸 800×800，支持 JPG/PNG/WebP</div>
-          </template>
-        </el-upload>
-      </el-form-item>
+        <el-form-item label="微信">
+          <el-input v-model="form.contactWechat" placeholder="选填，方便买家联系" />
+        </el-form-item>
 
-      <el-form-item label="商品图片">
-        <el-upload
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          :on-success="onImageSuccess"
-          :on-remove="onImageRemove"
-          :file-list="imageFileList"
-          list-type="picture-card"
-          accept="image/*"
-          multiple
-        >
-          <el-icon><Plus /></el-icon>
-        </el-upload>
-        <div class="el-upload__tip">最多上传 9 张，第一张将作为封面展示</div>
-      </el-form-item>
+        <el-form-item label="QQ">
+          <el-input v-model="form.contactQq" placeholder="选填" />
+        </el-form-item>
 
-      <el-form-item label="微信">
-        <el-input v-model="form.contactWechat" placeholder="选填，方便买家联系" />
-      </el-form-item>
-
-      <el-form-item label="QQ">
-        <el-input v-model="form.contactQq" placeholder="选填" />
-      </el-form-item>
-
-      <el-form-item>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
-          {{ submitting ? '发布中...' : '发布' }}
-        </el-button>
-        <el-button @click="router.back()">取消</el-button>
-      </el-form-item>
-    </el-form>
+        <el-form-item>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">
+            {{ submitting ? '发布中...' : '发布' }}
+          </el-button>
+          <el-button @click="router.back()">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
   </div>
 </template>
 
@@ -140,7 +138,6 @@ const form = reactive({
   contactQq: '',
 })
 
-// el-upload 的 file-list 用于控制展示
 const coverFileList = ref<UploadUserFile[]>([])
 const imageFileList = ref<UploadUserFile[]>([])
 
@@ -150,9 +147,6 @@ const rules: FormRules = {
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
 }
 
-// el-upload 直接发请求，不经过 axios 拦截器
-// 收到的是完整响应体 { code, message, data: { url: '...' } }
-// 需要从 res.data.url 取 URL
 const onCoverSuccess = (res: { data: { url: string } }) => {
   form.coverImage = res.data?.url || ''
 }
@@ -171,12 +165,10 @@ const onImageRemove = (_file: UploadFile, fileList: UploadUserFile[]) => {
     .filter(Boolean)
 }
 
-// ========== 提交 ==========
 const handleSubmit = async () => {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
 
-  // 如果有商品图片但没有封面图，用第一张商品图片作为封面
   if (!form.coverImage && form.images.length > 0) {
     form.coverImage = form.images[0]
   }
@@ -202,7 +194,6 @@ const handleSubmit = async () => {
   }
 }
 
-// ========== 加载分类 ==========
 const fetchCategories = async () => {
   loading.value = true
   loadError.value = false
@@ -219,3 +210,26 @@ onMounted(() => {
   fetchCategories()
 })
 </script>
+
+<style scoped>
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
+.publish-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 768px) {
+  .publish-card {
+    padding: 16px;
+  }
+}
+</style>

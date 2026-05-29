@@ -15,8 +15,7 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("http://localhost:5173");
-        config.addAllowedOriginPattern("http://localhost:5174");
+        config.addAllowedOriginPattern("*");
         config.setAllowCredentials(true);           // 允许携带 Cookie/Token
         config.addAllowedMethod("*");               // 允许所有 HTTP 方法
         config.addAllowedHeader("*");               // 允许所有请求头

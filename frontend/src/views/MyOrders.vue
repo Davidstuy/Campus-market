@@ -1,23 +1,19 @@
 <template>
   <div class="my-orders">
-    <h2>我的订单</h2>
+    <h2 class="page-title">我的订单</h2>
 
-    <!-- 加载态 -->
     <el-skeleton v-if="loading" :rows="5" animated />
 
-    <!-- 错误态 -->
     <el-result v-else-if="error" icon="error" title="加载失败">
       <template #extra>
         <el-button type="primary" @click="fetchData">重新加载</el-button>
       </template>
     </el-result>
 
-    <!-- 空态 -->
     <el-empty v-else-if="orders.length === 0" description="暂无订单">
       <el-button type="primary" @click="$router.push('/products')">去逛逛</el-button>
     </el-empty>
 
-    <!-- 正常态 -->
     <div v-else class="order-list">
       <div
         v-for="order in orders"
@@ -87,32 +83,67 @@ onMounted(fetchData)
 
 <style scoped>
 .my-orders { max-width: 800px; margin: 0 auto; }
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
 .order-card {
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 12px;
   cursor: pointer;
-  transition: box-shadow .3s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-xs);
 }
-.order-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+.order-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
 .order-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
 }
-.order-no { font-size: 13px; color: #909399; }
+.order-no { font-size: var(--text-sm); color: var(--text-muted); }
+
 .order-body { display: flex; gap: 12px; }
-.cover { width: 80px; height: 80px; border-radius: 6px; flex-shrink: 0; }
-.title { font-size: 15px; margin-bottom: 6px; }
-.price { color: #f56c6c; font-weight: bold; }
+.cover {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+.title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.price {
+  color: var(--el-color-danger);
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+
 .order-footer {
   display: flex;
   justify-content: space-between;
   margin-top: 12px;
-  font-size: 12px;
-  color: #c0c4cc;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
-.pagination { margin-top: 20px; display: flex; justify-content: center; }
+
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
 </style>

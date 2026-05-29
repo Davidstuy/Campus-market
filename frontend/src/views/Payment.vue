@@ -1,29 +1,31 @@
 <template>
   <div class="payment">
-    <h2>确认支付</h2>
+    <h2 class="page-title">确认支付</h2>
 
-    <!-- 加载态 -->
     <el-skeleton v-if="loading" :rows="4" animated />
 
-    <!-- 错误态 -->
     <el-result v-else-if="error" icon="error" title="加载失败" sub-title="无法获取订单信息">
       <template #extra>
         <el-button type="primary" @click="fetchData">重新加载</el-button>
       </template>
     </el-result>
 
-    <!-- 订单不存在 -->
     <el-empty v-else-if="!order" description="订单不存在" />
 
-    <!-- 正常态 -->
-    <div v-else class="payment-content">
+    <div v-else class="payment-card">
       <div class="order-info">
-        <div class="label">订单号</div>
-        <div class="value">{{ order.orderNo }}</div>
-        <div class="label">商品</div>
-        <div class="value">{{ order.productTitle }}</div>
-        <div class="label">金额</div>
-        <div class="price">¥{{ order.productPrice }}</div>
+        <div class="info-row">
+          <span class="label">订单号</span>
+          <span class="value">{{ order.orderNo }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">商品</span>
+          <span class="value">{{ order.productTitle }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">金额</span>
+          <span class="price">¥{{ order.productPrice }}</span>
+        </div>
       </div>
 
       <el-divider />
@@ -45,7 +47,6 @@
         </div>
       </div>
 
-      <!-- 支付中 -->
       <div v-if="paying" class="paying-overlay">
         <div class="spinner">
           <el-icon class="is-loading" :size="48"><Loading /></el-icon>
@@ -99,13 +100,9 @@ const fetchData = async () => {
 const handlePay = async () => {
   if (!order.value) return
   paying.value = true
-
-  // 模拟跳转支付网关的加载动画
   await new Promise(resolve => setTimeout(resolve, 1500))
-
   try {
     await orderApi.pay(order.value.id)
-    // 跳转到订单详情
     router.replace(`/orders/${order.value.id}`)
   } catch {
     paying.value = false
@@ -117,33 +114,94 @@ onMounted(fetchData)
 
 <style scoped>
 .payment { max-width: 480px; margin: 0 auto; }
+
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
+.payment-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
 .order-info {
-  background: #f5f7fa;
-  border-radius: 8px;
+  background: var(--el-color-primary-light-9);
+  border-radius: var(--radius-md);
   padding: 20px;
   margin-bottom: 16px;
 }
-.label { color: #909399; font-size: 13px; margin-bottom: 2px; }
-.label + .label { margin-top: 12px; }
-.value { font-size: 14px; }
-.price { color: #f56c6c; font-size: 24px; font-weight: bold; margin-top: 4px; }
-.pay-methods { display: flex; gap: 16px; margin-bottom: 24px; }
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+.info-row + .info-row {
+  border-top: 1px solid var(--border-color);
+}
+.label {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.value {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.price {
+  color: var(--el-color-danger);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.pay-methods {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
 .pay-method {
   flex: 1;
   padding: 16px;
   text-align: center;
-  border: 2px solid #dcdfe6;
-  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: border-color .3s;
+  font-weight: 500;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  transition: all var(--transition-base);
 }
-.pay-method.active { border-color: #409eff; color: #409eff; }
-.pay-btn { width: 100%; }
+.pay-method:hover {
+  border-color: var(--el-color-primary-light-5);
+  color: var(--el-color-primary);
+}
+.pay-method.active {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.pay-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
 .paying-overlay {
   display: flex;
   justify-content: center;
   padding: 40px 0;
 }
 .spinner { text-align: center; }
-.spinner p { margin-top: 16px; color: #909399; }
+.spinner p { margin-top: 16px; color: var(--text-muted); font-size: var(--text-sm); }
 </style>

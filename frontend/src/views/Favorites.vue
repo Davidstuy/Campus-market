@@ -1,11 +1,9 @@
 <template>
   <div class="favorites-page">
-    <h2>我的收藏</h2>
+    <h2 class="page-title">我的收藏</h2>
 
-    <!-- 加载态 -->
     <el-skeleton v-if="loading && products.length === 0" :rows="4" animated />
 
-    <!-- 错误态 -->
     <el-result
       v-else-if="error"
       status="error"
@@ -17,7 +15,6 @@
       </template>
     </el-result>
 
-    <!-- 空状态 -->
     <el-empty
       v-else-if="!loading && products.length === 0"
       description="还没有收藏商品，去逛逛吧"
@@ -25,7 +22,6 @@
       <el-button type="primary" @click="$router.push('/products')">浏览商品</el-button>
     </el-empty>
 
-    <!-- 正常态：商品卡片网格 -->
     <template v-else>
       <div class="product-grid">
         <ProductCard
@@ -68,7 +64,6 @@ const fetchData = async () => {
   error.value = false
   try {
     const data = await favoriteApi.list({ page: page.value, size: size.value })
-    // API 返回的 records 已经是 ProductVO，直接使用
     products.value = data.records as unknown as Product[]
     total.value = data.total
   } catch {
@@ -78,7 +73,6 @@ const fetchData = async () => {
   }
 }
 
-/** 取消收藏后从列表中移除 */
 const handleUnfavorited = (productId: number) => {
   products.value = products.value.filter(p => p.id !== productId)
   total.value = Math.max(0, total.value - 1)
@@ -88,10 +82,28 @@ onMounted(fetchData)
 </script>
 
 <style scoped>
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
 }
-.pagination { margin-top: 20px; display: flex; justify-content: center; }
+
+.pagination {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

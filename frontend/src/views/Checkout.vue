@@ -1,22 +1,18 @@
 <template>
   <div class="checkout">
-    <h2>确认订单</h2>
+    <h2 class="page-title">确认订单</h2>
 
-    <!-- 加载态 -->
     <el-skeleton v-if="loading" :rows="5" animated />
 
-    <!-- 错误态 -->
     <el-result v-else-if="error" icon="error" title="加载失败" sub-title="无法获取商品信息">
       <template #extra>
         <el-button type="primary" @click="fetchData">重新加载</el-button>
       </template>
     </el-result>
 
-    <!-- 商品不存在 -->
     <el-empty v-else-if="!product" description="商品不存在" />
 
-    <!-- 正常态 -->
-    <div v-else class="checkout-content">
+    <div v-else class="checkout-card">
       <div class="product-summary">
         <el-image :src="product.coverImage || '/placeholder.svg'" fit="cover" class="cover" />
         <div class="info">
@@ -111,6 +107,22 @@ onMounted(fetchData)
   max-width: 640px;
   margin: 0 auto;
 }
+
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
+.checkout-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
 .product-summary {
   display: flex;
   gap: 16px;
@@ -119,13 +131,45 @@ onMounted(fetchData)
 .cover {
   width: 120px;
   height: 120px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
+  background: #f1f5f9;
 }
-.info h3 { margin: 0 0 8px; }
-.price { color: #f56c6c; font-size: 20px; font-weight: bold; }
-.seller { color: #909399; font-size: 13px; margin-top: 6px; }
-.total { text-align: right; font-size: 16px; margin: 20px 0; }
-.final-price { color: #f56c6c; font-size: 24px; font-weight: bold; }
-.submit-btn { width: 100%; }
+.info h3 {
+  margin: 0 0 8px;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+.price {
+  color: var(--el-color-danger);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.seller {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-top: 6px;
+}
+
+.total {
+  text-align: right;
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  margin: 20px 0;
+}
+.final-price {
+  color: var(--el-color-danger);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
 </style>

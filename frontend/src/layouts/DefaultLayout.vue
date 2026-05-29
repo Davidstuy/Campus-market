@@ -19,12 +19,14 @@ import AppFooter from '@/components/common/AppFooter.vue'
   display: flex;
   flex-direction: column;
 }
+
 .main-content {
   flex: 1;
-  max-width: 1200px;
+  max-width: var(--max-width);
   width: 100%;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--section-gap) var(--page-padding);
+  min-height: calc(100vh - var(--header-height) - 200px);
 }
 
 @media (max-width: 768px) {

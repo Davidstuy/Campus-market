@@ -113,6 +113,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 分类允许匿名访问
         if ("GET".equalsIgnoreCase(method) && path.contains("/v1/categories")) return true;
 
+        // WebSocket 端点允许匿名访问（认证由 StompAuthInterceptor 处理）
+        if (path.contains("/ws")) return true;
+
         return false;
     }
 

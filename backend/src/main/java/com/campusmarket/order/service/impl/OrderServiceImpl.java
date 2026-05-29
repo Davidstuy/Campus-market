@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campusmarket.common.exception.BusinessException;
+import com.campusmarket.notification.dto.NotificationVO;
+import com.campusmarket.notification.service.NotificationPushService;
+import com.campusmarket.notification.service.NotificationService;
 import com.campusmarket.order.dto.CreateOrderRequest;
 import com.campusmarket.order.dto.OrderVO;
 import com.campusmarket.order.entity.Order;
@@ -30,6 +33,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     private final ProductMapper productMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
+    private final NotificationPushService notificationPushService;
 
     @Override
     @Transactional
@@ -64,6 +69,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
         this.save(order);
 
+        notifyStatusChange(order, "ORDER_CREATED", "有新订单",
+                "你的商品「" + product.getTitle() + "」已被下单，订单号 " + order.getOrderNo(), order.getSellerId());
+
         return buildOrderVO(order);
     }
 
@@ -78,6 +86,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setStatus("PAID");
         order.setPaidAt(LocalDateTime.now());
         this.updateById(order);
+
+        notifyStatusChange(order, "ORDER_PAID", "订单已付款",
+                "订单 " + order.getOrderNo() + " 已付款，请尽快发货", order.getSellerId());
 
         return buildOrderVO(order);
     }
@@ -98,6 +109,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setShippedAt(LocalDateTime.now());
         this.updateById(order);
 
+        notifyStatusChange(order, "ORDER_SHIPPED", "卖家已发货",
+                "你的商品「" + order.getProductTitle() + "」已发货，请留意收货", order.getBuyerId());
+
         return buildOrderVO(order);
     }
 
@@ -113,6 +127,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setCompletedAt(LocalDateTime.now());
         this.updateById(order);
 
+        notifyStatusChange(order, "ORDER_COMPLETED", "订单已完成",
+                "订单 " + order.getOrderNo() + " 买家已确认收货", order.getSellerId());
+
         return buildOrderVO(order);
     }
 
@@ -127,6 +144,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setStatus("CANCELLED");
         order.setCancelledAt(LocalDateTime.now());
         this.updateById(order);
+
+        notifyStatusChange(order, "ORDER_CANCELLED", "订单已取消",
+                "订单 " + order.getOrderNo() + " 已被买家取消", order.getSellerId());
     }
 
     @Override
@@ -246,6 +266,19 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         dst.setCancelledAt(src.getCancelledAt());
         dst.setCreatedAt(src.getCreatedAt());
         dst.setUpdatedAt(src.getUpdatedAt());
+    }
+
+    private void notifyStatusChange(Order order, String type, String title, String content, Long recipientId) {
+        notificationService.createNotification(recipientId, type, title, content, order.getId());
+
+        NotificationVO vo = new NotificationVO();
+        vo.setType(type);
+        vo.setTitle(title);
+        vo.setContent(content);
+        vo.setOrderId(order.getId());
+        vo.setIsRead(0);
+
+        notificationPushService.pushNotification(String.valueOf(recipientId), vo);
     }
 
     private String generateOrderNo() {

@@ -1,42 +1,48 @@
 <template>
   <div class="product-card" @click="$router.push(`/products/${product.id}`)">
-    <el-image
-      :src="thumbUrl(product.coverImage)"
-      fit="cover"
-      class="cover"
-    >
-      <template #error>
-        <div class="image-placeholder">
-          <el-icon :size="40"><Picture /></el-icon>
-        </div>
-      </template>
-    </el-image>
-
-    <!-- 收藏按钮（在收藏页和列表页可显示） -->
-    <el-button
-      v-if="showFavorite"
-      class="fav-btn"
-      :type="product.isFavorited ? 'warning' : 'default'"
-      :icon="product.isFavorited ? StarFilled : Star"
-      circle
-      size="small"
-      @click.stop="toggleFav"
-    />
-
+    <div class="cover-wrapper">
+      <el-image
+        :src="thumbUrl(product.coverImage)"
+        fit="cover"
+        class="cover"
+      >
+        <template #error>
+          <div class="image-placeholder">
+            <el-icon :size="32"><Picture /></el-icon>
+          </div>
+        </template>
+      </el-image>
+      <div class="cover-overlay"></div>
+      <el-button
+        class="fav-btn"
+        :type="product.isFavorited ? 'warning' : 'default'"
+        :icon="product.isFavorited ? StarFilled : Star"
+        circle
+        size="small"
+        @click.stop="toggleFav"
+      />
+    </div>
     <div class="info">
       <h3 class="title">{{ product.title }}</h3>
-      <div class="price">¥{{ product.price }}</div>
+      <div class="price-section">
+        <span class="price">¥{{ product.price }}</span>
+      </div>
       <div class="meta">
-        <span>{{ product.seller?.nickname || '匿名' }}</span>
+        <span class="seller-name">{{ product.seller?.nickname || '匿名' }}</span>
+        <span class="meta-divider">·</span>
+        <span class="date">{{ formatRelativeTime(product.createdAt) }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { Picture, Star, StarFilled } from '@element-plus/icons-vue'
 import { favoriteApi } from '@/api/modules/favorite'
 import type { Product } from '@/types'
+
+const router = useRouter()
 
 const props = withDefaults(defineProps<{
   product: Product
@@ -45,12 +51,25 @@ const props = withDefaults(defineProps<{
 
 const thumbUrl = (url: string) => {
   if (!url || url === '/placeholder.svg') return url
-  // OSS URL: 使用阿里云图片处理服务缩略
   if (url.includes('aliyuncs.com')) {
     return url + '?x-oss-process=image/resize,m_lfit,w_400'
   }
-  // 本地路径：使用本地缩略图端点
   return url.replace('/v1/files/', '/v1/files/thumb/')
+}
+
+const formatRelativeTime = (dateStr: string): string => {
+  if (!dateStr) return ''
+  const now = Date.now()
+  const date = new Date(dateStr).getTime()
+  const diff = now - date
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}小时前`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}天前`
+  return dateStr.slice(0, 10)
 }
 
 const emit = defineEmits<{
@@ -58,6 +77,10 @@ const emit = defineEmits<{
 }>()
 
 const toggleFav = async () => {
+  if (!localStorage.getItem('token')) {
+    router.push(`/login?redirect=${encodeURIComponent(router.currentRoute.value.fullPath)}`)
+    return
+  }
   if (props.product.isFavorited) {
     await favoriteApi.remove(props.product.id)
     props.product.isFavorited = false
@@ -71,23 +94,46 @@ const toggleFav = async () => {
 
 <style scoped>
 .product-card {
-  background: #fff;
-  border-radius: 10px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s;
-  border: 1px solid #e2e8f0;
+  transition: all var(--transition-base);
+  border: 1px solid var(--border-color);
   position: relative;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
 }
 .product-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+  border-color: transparent;
+}
+.product-card:active {
+  transform: scale(0.98);
+}
+
+.cover-wrapper {
+  position: relative;
+  overflow: hidden;
 }
 .cover {
   width: 100%;
   height: 200px;
   background: #f1f5f9;
+  transition: transform var(--transition-slow);
+}
+.product-card:hover .cover {
+  transform: scale(1.05);
+}
+.cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.04) 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+.product-card:hover .cover-overlay {
+  opacity: 1;
 }
 .image-placeholder {
   height: 200px;
@@ -95,34 +141,54 @@ const toggleFav = async () => {
   align-items: center;
   justify-content: center;
   background: #f1f5f9;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
+
 .fav-btn {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 2;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all var(--transition-fast);
 }
+.product-card:hover .fav-btn,
+.fav-btn:has(.el-icon-StarFilled) {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .info {
-  padding: 14px;
+  padding: 16px;
 }
 .title {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
   margin-bottom: 8px;
-  color: #1e293b;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.4;
+}
+.price-section {
+  margin-bottom: 8px;
 }
 .price {
-  color: #ef4444;
-  font-size: 18px;
+  color: var(--el-color-danger);
+  font-size: var(--text-xl);
   font-weight: 700;
+  letter-spacing: -0.3px;
 }
 .meta {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.meta-divider {
+  color: var(--border-color);
 }
 </style>

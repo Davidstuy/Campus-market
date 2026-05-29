@@ -96,6 +96,43 @@ CREATE TABLE IF NOT EXISTS `order_t` (
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表';
 
+-- 通知表
+CREATE TABLE IF NOT EXISTS `notification` (
+    id           BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    recipient_id BIGINT       NOT NULL COMMENT '接收者用户ID',
+    type         VARCHAR(32)  NOT NULL COMMENT '通知类型',
+    title        VARCHAR(100) NOT NULL COMMENT '通知标题',
+    content      VARCHAR(500) NOT NULL COMMENT '通知内容',
+    order_id     BIGINT       DEFAULT NULL COMMENT '关联订单ID',
+    is_read      TINYINT(1)   DEFAULT 0 COMMENT '是否已读',
+    created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_recipient (recipient_id, is_read, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知表';
+
+-- 会话表
+CREATE TABLE IF NOT EXISTS `chat_conversation` (
+    id              BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    buyer_id        BIGINT       NOT NULL COMMENT '买家ID',
+    seller_id       BIGINT       NOT NULL COMMENT '卖家ID',
+    product_id      BIGINT       NOT NULL COMMENT '商品ID',
+    last_message    VARCHAR(500) DEFAULT '' COMMENT '最后一条消息',
+    last_message_at DATETIME     DEFAULT NULL COMMENT '最后消息时间',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_buyer_seller_product (buyer_id, seller_id, product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会话表';
+
+-- 消息表
+CREATE TABLE IF NOT EXISTS `chat_message` (
+    id              BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    conversation_id BIGINT       NOT NULL COMMENT '会话ID',
+    sender_id       BIGINT       NOT NULL COMMENT '发送者',
+    receiver_id     BIGINT       NOT NULL COMMENT '接收者',
+    content         VARCHAR(1000) NOT NULL COMMENT '消息内容',
+    is_read         TINYINT(1)   DEFAULT 0 COMMENT '是否已读',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_conv_created (conversation_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
+
 -- 收藏表
 CREATE TABLE IF NOT EXISTS `favorite` (
     id         BIGINT   AUTO_INCREMENT PRIMARY KEY,

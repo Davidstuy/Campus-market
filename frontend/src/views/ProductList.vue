@@ -1,5 +1,7 @@
 <template>
   <div class="product-list-page">
+    <h2 class="page-title">浏览商品</h2>
+
     <div class="toolbar">
       <el-input
         v-model="keyword"
@@ -26,7 +28,6 @@
       </el-select>
     </div>
 
-    <!-- 错误态 -->
     <el-result
       v-if="error"
       icon="error"
@@ -59,7 +60,6 @@
         />
       </div>
     </template>
-
   </div>
 </template>
 
@@ -100,7 +100,6 @@ const fetchData = async () => {
     total.value = data.total
     loading.value = false
 
-    // 收藏状态异步加载，不阻塞商品显示
     if (isLoggedIn.value && data.records.length > 0) {
       const ids = data.records.map(p => p.id)
       const favMap = await favoriteApi.check(ids)
@@ -124,20 +123,45 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
 .toolbar {
   display: flex;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
 }
+.toolbar :deep(.el-input__wrapper),
+.toolbar :deep(.el-select__wrapper) {
+  border-radius: var(--radius-md);
+}
+
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
   min-height: 200px;
 }
+
 .pagination {
-  margin-top: 30px;
+  margin-top: 32px;
   display: flex;
   justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

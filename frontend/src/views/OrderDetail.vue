@@ -1,57 +1,53 @@
 <template>
   <div class="order-detail">
-    <!-- 加载态 -->
     <el-skeleton v-if="loading" :rows="6" animated />
 
-    <!-- 错误态 -->
     <el-result v-else-if="error" icon="error" title="加载失败">
       <template #extra>
         <el-button type="primary" @click="fetchData">重新加载</el-button>
       </template>
     </el-result>
 
-    <!-- 订单不存在 -->
     <el-empty v-else-if="!order" description="订单不存在" />
 
-    <!-- 正常态 -->
-    <div v-else>
+    <div v-else class="order-detail-card">
       <div class="order-header">
-        <h3>订单详情</h3>
+        <h2 class="page-title">订单详情</h2>
         <OrderStatusTag :status="order.status" />
       </div>
 
-      <!-- 进度条 -->
-      <el-steps :active="activeStep" align-center class="steps">
-        <el-step title="提交订单" :description="order.createdAt?.slice(0, 16)" />
-        <el-step title="付款" :description="order.paidAt?.slice(0, 16) || '待付款'" />
-        <el-step title="卖家发货" :description="order.shippedAt?.slice(0, 16) || '待发货'" />
-        <el-step title="确认收货" :description="order.completedAt?.slice(0, 16) || '待收货'" />
-      </el-steps>
+      <div class="steps-wrapper">
+        <el-steps :active="activeStep" align-center class="steps">
+          <el-step title="提交订单" :description="order.createdAt?.slice(0, 16)" />
+          <el-step title="付款" :description="order.paidAt?.slice(0, 16) || '待付款'" />
+          <el-step title="卖家发货" :description="order.shippedAt?.slice(0, 16) || '待发货'" />
+          <el-step title="确认收货" :description="order.completedAt?.slice(0, 16) || '待收货'" />
+        </el-steps>
+      </div>
 
-      <!-- 订单信息 -->
-      <el-descriptions :column="2" border class="info-table">
-        <el-descriptions-item label="订单号">{{ order.orderNo }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <OrderStatusTag :status="order.status" />
-        </el-descriptions-item>
-        <el-descriptions-item label="商品">{{ order.productTitle }}</el-descriptions-item>
-        <el-descriptions-item label="金额">
-          <span class="price">¥{{ order.productPrice }}</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="买家">
-          {{ order.buyer?.nickname || order.buyer?.username }}
-        </el-descriptions-item>
-        <el-descriptions-item label="卖家">
-          {{ order.seller?.nickname || order.seller?.username }}
-        </el-descriptions-item>
-        <el-descriptions-item v-if="order.buyerRemark" label="买家备注" :span="2">
-          {{ order.buyerRemark }}
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="info-table-wrapper">
+        <el-descriptions :column="2" border class="info-table">
+          <el-descriptions-item label="订单号">{{ order.orderNo }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <OrderStatusTag :status="order.status" />
+          </el-descriptions-item>
+          <el-descriptions-item label="商品">{{ order.productTitle }}</el-descriptions-item>
+          <el-descriptions-item label="金额">
+            <span class="price">¥{{ order.productPrice }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="买家">
+            {{ order.buyer?.nickname || order.buyer?.username }}
+          </el-descriptions-item>
+          <el-descriptions-item label="卖家">
+            {{ order.seller?.nickname || order.seller?.username }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="order.buyerRemark" label="买家备注" :span="2">
+            {{ order.buyerRemark }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
 
-      <!-- 操作按钮 -->
       <div class="actions">
-        <!-- 买家操作 -->
         <template v-if="isBuyer">
           <el-button
             v-if="order.status === 'PENDING'"
@@ -62,7 +58,6 @@
           </el-button>
           <el-button
             v-if="order.status === 'PENDING'"
-            type="default"
             @click="handleCancel"
           >
             取消订单
@@ -76,7 +71,6 @@
           </el-button>
         </template>
 
-        <!-- 卖家操作 -->
         <template v-if="isSeller">
           <el-button
             v-if="order.status === 'PAID'"
@@ -170,10 +164,72 @@ onMounted(fetchData)
 </script>
 
 <style scoped>
-.order-detail { max-width: 720px; margin: 0 auto; }
-.order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.steps { margin-bottom: 30px; }
-.info-table { margin-bottom: 20px; }
-.price { color: #f56c6c; font-weight: bold; }
-.actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+.order-detail { max-width: 760px; margin: 0 auto; }
+
+.order-detail-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.steps-wrapper {
+  background: var(--el-color-primary-light-9);
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  margin-bottom: 28px;
+}
+.steps :deep(.el-step__title) {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.steps :deep(.el-step__description) {
+  font-size: var(--text-xs);
+}
+
+.info-table-wrapper {
+  margin-bottom: 24px;
+}
+.info-table-wrapper :deep(.el-descriptions__body) {
+  border-radius: var(--radius-md);
+}
+.info-table-wrapper :deep(.el-descriptions__cell) {
+  padding: 12px 16px;
+}
+
+.price {
+  color: var(--el-color-danger);
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 28px;
+}
+.actions :deep(.el-button--primary) {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .order-detail-card {
+    padding: 16px;
+  }
+}
 </style>

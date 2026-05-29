@@ -115,6 +115,43 @@ export interface CreateOrderRequest {
   buyerRemark?: string
 }
 
+// ============ 聊天 ============
+export interface Conversation {
+  id: number
+  buyerId: number
+  sellerId: number
+  productId: number
+  productTitle: string
+  productCover: string
+  lastMessage: string
+  lastMessageAt: string | null
+  unreadCount: number
+  otherPartyName: string
+  otherPartyAvatar: string
+  createdAt: string
+}
+
+export interface ChatMessage {
+  id: number
+  conversationId: number
+  senderId: number
+  receiverId: number
+  content: string
+  isRead: number
+  createdAt: string
+}
+
+// ============ 通知 ============
+export interface Notification {
+  id: number
+  type: string
+  title: string
+  content: string
+  orderId: number | null
+  isRead: number
+  createdAt: string
+}
+
 // ============ 通用 ============
 export interface ApiResponse<T = unknown> {
   code: number

@@ -76,6 +76,18 @@ const router = createRouter({
           component: () => import('@/views/SellerOrders.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          path: 'notifications',
+          name: 'Notifications',
+          component: () => import('@/views/Notifications.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'chat',
+          name: 'Chat',
+          component: () => import('@/views/Chat.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
     {
