@@ -15,15 +15,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/files")
 public class FileController {
-
-    private final OssFileService ossFileService;
 
     @Value("${campus-market.upload.allowed-types}")
     private String allowedTypes;
@@ -32,7 +33,7 @@ public class FileController {
     private String uploadPath;
 
     /**
-     * 文件上传到 OSS
+     * 文件上传 — 保存到本地 uploads 目录
      */
     @PostMapping("/upload")
     public ApiResult<Map<String, String>> upload(@RequestParam("file") MultipartFile file) {
@@ -47,7 +48,17 @@ public class FileController {
         }
 
         try {
-            String fileUrl = ossFileService.uploadFile(file);
+            Path uploadDir = Paths.get(uploadPath).toAbsolutePath().normalize();
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+            String newFilename = UUID.randomUUID().toString() + "." + extension;
+            Path destPath = uploadDir.resolve(newFilename);
+            file.transferTo(destPath.toFile());
+
+            String fileUrl = "/v1/files/" + newFilename;
+            log.info("文件上传成功: {} → {}", originalFilename, fileUrl);
+
             Map<String, String> data = new HashMap<>();
             data.put("url", fileUrl);
             return ApiResult.success(data);
