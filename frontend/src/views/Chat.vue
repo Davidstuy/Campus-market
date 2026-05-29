@@ -77,7 +77,6 @@
           <div class="bubble-content">{{ msg.content }}</div>
           <div class="bubble-time">{{ formatTime(msg.createdAt) }}</div>
         </div>
-        <div ref="msgEndRef"></div>
       </div>
 
       <div class="chat-input-area">
@@ -132,7 +131,6 @@ const loading = ref(false)
 const error = ref(false)
 const loadingMore = ref(false)
 const msgListRef = ref<HTMLElement>()
-const msgEndRef = ref<HTMLElement>()
 const currentPage = ref(1)
 const hasMore = ref(true)
 let unsubChat: (() => void) | null = null
@@ -272,7 +270,9 @@ const sendMessage = async () => {
 
 const scrollToBottom = () => {
   nextTick(() => {
-    msgEndRef.value?.scrollIntoView({ behavior: 'smooth' })
+    if (msgListRef.value) {
+      msgListRef.value.scrollTop = msgListRef.value.scrollHeight
+    }
   })
 }
 
