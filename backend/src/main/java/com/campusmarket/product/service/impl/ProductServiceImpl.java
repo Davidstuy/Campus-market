@@ -46,10 +46,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
      */
     @Override
     @Cacheable(value = "products",
-               key = "'page_' + #pageNum + '_' + #size + '_' + #categoryId + '_' + #sort",
-               condition = "#keyword == null",
+               key = "'page_' + #pageNum + '_' + #size + '_' + #categoryId + '_' + #sellerId + '_' + #sort",
+               condition = "#keyword == null && #sellerId == null",
                unless = "#result.records.isEmpty()")
-    public Page<ProductVO> listProducts(int pageNum, int size, Long categoryId, String keyword, String sort) {
+    public Page<ProductVO> listProducts(int pageNum, int size, Long categoryId, Long sellerId, String keyword, String sort) {
         // 1. 构建查询条件
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
 
@@ -58,6 +58,9 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
         // 分类筛选：categoryId 不为空时才加此条件
         wrapper.eq(categoryId != null, Product::getCategoryId, categoryId);
+
+        // 卖家筛选：sellerId 不为空时才加此条件
+        wrapper.eq(sellerId != null, Product::getSellerId, sellerId);
 
         // 关键词搜索：模糊匹配标题
         wrapper.like(keyword != null && !keyword.isEmpty(), Product::getTitle, keyword);

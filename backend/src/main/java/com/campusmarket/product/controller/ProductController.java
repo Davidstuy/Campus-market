@@ -41,10 +41,11 @@ public class ProductController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long sellerId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "latest") String sort) {
 
-        Page<ProductVO> result = productService.listProducts(page, size, categoryId, keyword, sort);
+        Page<ProductVO> result = productService.listProducts(page, size, categoryId, sellerId, keyword, sort);
 
         return ApiResult.success(PageResult.of(
                 result.getRecords(),

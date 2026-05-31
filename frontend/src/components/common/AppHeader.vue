@@ -8,9 +8,11 @@
       <div class="user-area">
         <template v-if="auth.isLoggedIn()">
           <NotificationBell />
-          <el-icon :size="20" class="chat-nav-icon" @click="$router.push('/chat')">
-            <ChatDotRound />
-          </el-icon>
+          <el-badge :value="chatUnread" :max="99" :hidden="!chatUnread">
+            <el-icon :size="20" class="chat-nav-icon" @click="$router.push('/chat')">
+              <ChatDotRound />
+            </el-icon>
+          </el-badge>
           <el-dropdown trigger="click">
             <span class="user-trigger">
               <el-avatar :size="32" :src="auth.user?.avatarUrl" />
@@ -37,9 +39,6 @@
                 <el-dropdown-item>
                   <router-link to="/profile/sales">我的卖出</router-link>
                 </el-dropdown-item>
-                <el-dropdown-item>
-                  <router-link to="/chat">消息</router-link>
-                </el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -55,15 +54,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ArrowDown, ChatDotRound } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore } from '@/stores/notification'
 import { useRouter } from 'vue-router'
 import { useScrollObserver } from '@/composables/useScrollObserver'
 import NotificationBell from '@/components/notification/NotificationBell.vue'
 
 const auth = useAuthStore()
+const notificationStore = useNotificationStore()
 const router = useRouter()
 const { isScrolled } = useScrollObserver(10)
+const chatUnread = computed(() => notificationStore.chatUnreadCount)
 
 const handleLogout = () => {
   auth.logout()
@@ -188,12 +191,6 @@ const handleLogout = () => {
   color: var(--el-color-primary);
 }
 
-/* 桌面端隐藏聊天图标（已在下拉菜单中有入口） */
-@media (min-width: 769px) {
-  .chat-nav-icon {
-    display: none;
-  }
-}
 
 /* 移动端 */
 @media (max-width: 768px) {

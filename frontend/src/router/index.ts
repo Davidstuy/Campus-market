@@ -29,6 +29,12 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'publish/:id',
+          name: 'EditProduct',
+          component: () => import('@/views/PublishProduct.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'profile',
           name: 'UserProfile',
           component: () => import('@/views/UserProfile.vue'),
@@ -87,6 +93,11 @@ const router = createRouter({
           name: 'Chat',
           component: () => import('@/views/Chat.vue'),
           meta: { requiresAuth: true },
+        },
+        {
+          path: 'shop/:sellerId',
+          name: 'Shop',
+          component: () => import('@/views/Shop.vue'),
         },
       ],
     },

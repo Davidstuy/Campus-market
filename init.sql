@@ -133,6 +133,29 @@ CREATE TABLE IF NOT EXISTS `chat_message` (
     INDEX idx_conv_created (conversation_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
 
+-- 评论表
+CREATE TABLE IF NOT EXISTS `product_comment` (
+    id         BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    product_id  BIGINT       NOT NULL COMMENT '所属商品',
+    user_id     BIGINT       NOT NULL COMMENT '评论者',
+    content         VARCHAR(500) NOT NULL COMMENT '评论内容',
+    parent_id       BIGINT       DEFAULT NULL COMMENT '父评论ID，NULL=顶级评论',
+    reply_to_user_id BIGINT      DEFAULT NULL COMMENT '被回复用户ID',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_product_created (product_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品评论表';
+
+-- 评论投票表（赞/踩）
+CREATE TABLE IF NOT EXISTS `comment_vote` (
+    id         BIGINT   AUTO_INCREMENT PRIMARY KEY,
+    comment_id  BIGINT   NOT NULL COMMENT '评论ID',
+    user_id     BIGINT   NOT NULL COMMENT '投票用户',
+    vote        TINYINT  NOT NULL COMMENT '1=赞 -1=踩',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_comment_user (comment_id, user_id),
+    INDEX idx_comment (comment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论投票表';
+
 -- 收藏表
 CREATE TABLE IF NOT EXISTS `favorite` (
     id         BIGINT   AUTO_INCREMENT PRIMARY KEY,

@@ -73,6 +73,7 @@ export interface ProductQuery {
   size?: number
   keyword?: string
   categoryId?: number
+  sellerId?: number
   status?: string
   sort?: string
 }
@@ -139,6 +140,23 @@ export interface ChatMessage {
   content: string
   isRead: number
   createdAt: string
+}
+
+// ============ 评论 ============
+export interface Comment {
+  id: number
+  productId: number
+  userId: number
+  content: string
+  parentId: number | null
+  replyToUserId: number | null
+  replyToUser?: User | null
+  replies?: Comment[]
+  createdAt: string
+  user?: User
+  upCount: number
+  downCount: number
+  myVote: number | null  // 1=赞 -1=踩 null=未投票
 }
 
 // ============ 通知 ============

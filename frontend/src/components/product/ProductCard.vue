@@ -5,6 +5,9 @@
         :src="thumbUrl(product.coverImage)"
         fit="cover"
         class="cover"
+        :preview-src-list="[product.coverImage]"
+        :preview-teleported="true"
+        @click.stop
       >
         <template #error>
           <div class="image-placeholder">
@@ -28,7 +31,7 @@
         <span class="price">¥{{ product.price }}</span>
       </div>
       <div class="meta">
-        <span class="seller-name">{{ product.seller?.nickname || '匿名' }}</span>
+        <span class="seller-name" @click.stop="goToShop">{{ product.seller?.nickname || '匿名' }}</span>
         <span class="meta-divider">·</span>
         <span class="date">{{ formatRelativeTime(product.createdAt) }}</span>
       </div>
@@ -76,6 +79,12 @@ const emit = defineEmits<{
   unfavorited: [productId: number]
 }>()
 
+const goToShop = () => {
+  if (props.product.sellerId) {
+    router.push(`/shop/${props.product.sellerId}`)
+  }
+}
+
 const toggleFav = async () => {
   if (!localStorage.getItem('token')) {
     router.push(`/login?redirect=${encodeURIComponent(router.currentRoute.value.fullPath)}`)
@@ -115,10 +124,11 @@ const toggleFav = async () => {
 .cover-wrapper {
   position: relative;
   overflow: hidden;
+  aspect-ratio: 4 / 3;
 }
 .cover {
   width: 100%;
-  height: 200px;
+  height: 100%;
   background: #f1f5f9;
   transition: transform var(--transition-slow);
 }
@@ -136,7 +146,8 @@ const toggleFav = async () => {
   opacity: 1;
 }
 .image-placeholder {
-  height: 200px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,24 +171,24 @@ const toggleFav = async () => {
 }
 
 .info {
-  padding: 16px;
+  padding: 12px;
 }
 .title {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.4;
 }
 .price-section {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .price {
   color: var(--el-color-danger);
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 700;
   letter-spacing: -0.3px;
 }
@@ -187,6 +198,14 @@ const toggleFav = async () => {
   gap: 4px;
   font-size: var(--text-xs);
   color: var(--text-muted);
+}
+.seller-name {
+  cursor: pointer;
+  color: var(--el-color-primary);
+  transition: opacity var(--transition-fast);
+}
+.seller-name:hover {
+  opacity: 0.7;
 }
 .meta-divider {
   color: var(--border-color);

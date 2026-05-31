@@ -1,8 +1,8 @@
 <template>
   <div class="publish-page">
-    <h2 class="page-title">发布商品</h2>
+    <h2 class="page-title">{{ isEdit ? '编辑商品' : '发布商品' }}</h2>
 
-    <template v-if="loading">
+    <template v-if="loading || editLoading">
       <el-skeleton :rows="6" animated style="max-width: 700px" />
     </template>
 
@@ -99,7 +99,7 @@
 
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">
-            {{ submitting ? '发布中...' : '发布' }}
+            {{ submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '发布') }}
           </el-button>
           <el-button @click="router.back()">取消</el-button>
         </el-form-item>
@@ -109,8 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import type { FormInstance, FormRules, UploadFile, UploadUserFile } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { productApi } from '@/api/modules/product'
@@ -118,11 +118,16 @@ import { categoryApi } from '@/api/modules/category'
 import type { Category } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const loading = ref(true)
 const loadError = ref(false)
+const editLoading = ref(false)
 const categories = ref<Category[]>([])
+
+const isEdit = computed(() => !!route.params.id)
+const editId = computed(() => Number(route.params.id) || null)
 
 const uploadUrl = '/api/v1/files/upload'
 const uploadHeaders = { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -160,8 +165,9 @@ const onImageSuccess = (res: { data: { url: string } }) => {
 }
 
 const onImageRemove = (_file: UploadFile, fileList: UploadUserFile[]) => {
+  // 同时支持新上传的图片（response.data.url）和已有图片（url 属性）
   form.images = fileList
-    .map(f => (f.response as { data: { url: string } } | undefined)?.data?.url || '')
+    .map(f => (f.response as { data: { url: string } } | undefined)?.data?.url || f.url || '')
     .filter(Boolean)
 }
 
@@ -175,22 +181,65 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
-    await productApi.create({
-      title: form.title,
-      price: form.price,
-      categoryId: form.categoryId!,
-      description: form.description,
-      coverImage: form.coverImage,
-      images: form.images,
-      contactWechat: form.contactWechat,
-      contactQq: form.contactQq,
-    })
-    ElMessage.success('发布成功')
+    if (isEdit.value && editId.value) {
+      await productApi.update(editId.value, {
+        title: form.title,
+        price: form.price,
+        categoryId: form.categoryId!,
+        description: form.description,
+        coverImage: form.coverImage,
+        images: form.images,
+        contactWechat: form.contactWechat,
+        contactQq: form.contactQq,
+      })
+      ElMessage.success('保存成功')
+    } else {
+      await productApi.create({
+        title: form.title,
+        price: form.price,
+        categoryId: form.categoryId!,
+        description: form.description,
+        coverImage: form.coverImage,
+        images: form.images,
+        contactWechat: form.contactWechat,
+        contactQq: form.contactQq,
+      })
+      ElMessage.success('发布成功')
+    }
     router.push('/')
   } catch {
     // 错误已在拦截器中处理
   } finally {
     submitting.value = false
+  }
+}
+
+const loadProduct = async () => {
+  editLoading.value = true
+  try {
+    const product = await productApi.detail(editId.value!)
+    form.title = product.title
+    form.categoryId = product.categoryId
+    form.price = product.price
+    form.description = product.description || ''
+    form.coverImage = product.coverImage || ''
+    form.images = product.images?.map(img => img.url) || []
+    form.contactWechat = product.contactWechat || ''
+    form.contactQq = product.contactQq || ''
+
+    // 构建封面图 file-list（让 el-upload 显示已有图片）
+    if (product.coverImage) {
+      coverFileList.value = [{ name: 'cover', url: product.coverImage } as UploadUserFile]
+    }
+    // 构建商品图片 file-list
+    imageFileList.value = product.images?.map(img => ({
+      name: `img_${img.id}`,
+      url: img.url,
+    } as UploadUserFile)) || []
+  } catch {
+    loadError.value = true
+  } finally {
+    editLoading.value = false
   }
 }
 
@@ -206,8 +255,11 @@ const fetchCategories = async () => {
   }
 }
 
-onMounted(() => {
-  fetchCategories()
+onMounted(async () => {
+  await fetchCategories()
+  if (isEdit.value) {
+    await loadProduct()
+  }
 })
 </script>
 

@@ -25,7 +25,7 @@
       <el-divider />
 
       <el-form label-width="80px">
-        <el-form-item label="给卖家留言">
+        <el-form-item label="留言">
           <el-input
             v-model="remark"
             type="textarea"

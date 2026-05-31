@@ -8,6 +8,7 @@ import { ElMessage } from 'element-plus'
 export const useNotificationStore = defineStore('notification', () => {
   const notifications = ref<Notification[]>([])
   const unreadCount = ref(0)
+  const chatUnreadCount = ref(0)
   const total = ref(0)
   const wsConnected = ref(false)
   let stompClient: Client | null = null
@@ -104,6 +105,7 @@ export const useNotificationStore = defineStore('notification', () => {
                 try {
                   const body = JSON.parse(message.body)
                   console.log('[WS] Chat message arrived:', body.content)
+                  chatUnreadCount.value++
                   chatCallbacks.forEach(cb => cb(body))
                 } catch { /* ignore malformed */ }
               })
@@ -162,6 +164,7 @@ export const useNotificationStore = defineStore('notification', () => {
   return {
     notifications,
     unreadCount,
+    chatUnreadCount,
     total,
     wsConnected,
     fetchList,

@@ -46,8 +46,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 公开接口：不需要 token，直接放行
+        // 公开接口：不需要 token，但如果带了 token 也解析出用户（供 myVote 等场景使用）
         if (isPublicPath(path, request.getMethod())) {
+            trySetCurrentUser(request);
             chain.doFilter(request, response);
             return;
         }
@@ -122,6 +123,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * 发送 JSON 格式的错误响应（不是抛出异常，因为 Filter 层在 Spring 异常处理器之外）
      */
+    /**
+     * 尝试从请求中解析 token 并设置 currentUser（不强制要求登录）。
+     * 用于公开接口也能获取当前用户身份（如评论列表的 myVote）。
+     */
+    private void trySetCurrentUser(HttpServletRequest request) {
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return;
+        }
+        String token = authHeader.substring(7);
+        if (!jwtProvider.validateToken(token)) {
+            return;
+        }
+        Long userId = jwtProvider.getUserIdFromToken(token);
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setPassword(null);
+            request.setAttribute("currentUser", user);
+        }
+    }
+
     private void sendError(HttpServletResponse response, int code, String message) throws IOException {
         response.setStatus(code);
         response.setContentType("application/json;charset=UTF-8");

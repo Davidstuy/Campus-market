@@ -30,7 +30,7 @@
             :on-success="onAvatarSuccess"
             :before-upload="beforeAvatarUpload"
           >
-            <el-avatar :size="64" :src="form.avatarUrl" class="avatar-img" />
+            <el-avatar :size="64" :src="avatarSrc" :key="avatarKey" class="avatar-img" />
             <span class="avatar-tip">点击更换头像</span>
           </el-upload>
         </el-form-item>
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import type { UploadProps } from 'element-plus'
 import { userApi } from '@/api/modules/user'
 
@@ -75,6 +75,11 @@ const error = ref('')
 
 const uploadUrl = '/api/v1/files/upload'
 const uploadHeaders = { Authorization: `Bearer ${localStorage.getItem('token')}` }
+const avatarKey = ref(0)
+const avatarSrc = computed(() => {
+  if (!form.avatarUrl) return ''
+  return `${form.avatarUrl}?t=${avatarKey.value}`
+})
 
 const form = reactive({
   username: '',
@@ -103,20 +108,24 @@ const fetchProfile = async () => {
 
 const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
   const isImage = file.type.startsWith('image/')
-  const isLt2M = file.size / 1024 / 1024 < 2
+  const isLt5M = file.size / 1024 / 1024 < 5
   if (!isImage) {
     ElMessage.error('只能上传图片文件')
     return false
   }
-  if (!isLt2M) {
-    ElMessage.error('图片大小不能超过 2MB')
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB')
     return false
   }
   return true
 }
 
-const onAvatarSuccess = (res: { data: { url: string } }) => {
-  form.avatarUrl = res.data?.url || ''
+const onAvatarSuccess = (res: any) => {
+  const url = res?.data?.url || ''
+  if (url) {
+    form.avatarUrl = url
+    avatarKey.value++
+  }
   ElMessage.success('头像上传成功')
 }
 

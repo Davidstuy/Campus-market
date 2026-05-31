@@ -14,4 +14,5 @@ export const userApi = {
     form.append('file', file)
     return request.post('/v1/users/me/avatar', form)
   },
+  getPublicInfo: (id: number) => request.get(`/v1/users/public/${id}`) as Promise<{ id: string; nickname: string; avatarUrl: string }>,
 }

@@ -1,9 +1,9 @@
 <template>
   <div class="chat-page">
-    <!-- 会话列表 -->
+    <!-- 左栏：会话列表 -->
     <div class="chat-sidebar" :class="{ hidden: activeConversation }">
       <div class="sidebar-header">
-        <h3>消息</h3>
+        <h3>会话列表</h3>
       </div>
 
       <el-skeleton v-if="loading" :rows="5" animated style="padding:16px" />
@@ -20,7 +20,7 @@
       </el-result>
 
       <div v-else-if="conversations.length === 0" class="empty-chat">
-        <el-icon :size="48" color="#cbd5e1"><ChatDotRound /></el-icon>
+        <el-icon :size="40" color="#cbd5e1"><ChatDotRound /></el-icon>
         <p>暂无消息</p>
         <span>浏览商品时点击"联系卖家"即可发起对话</span>
       </div>
@@ -33,7 +33,7 @@
           :class="{ active: activeConversation?.id === conv.id }"
           @click="openConversation(conv)"
         >
-          <el-avatar :size="44" :src="conv.otherPartyAvatar" />
+          <el-avatar :size="40" :src="conv.otherPartyAvatar" />
           <div class="conv-info">
             <div class="conv-top">
               <span class="conv-name">{{ conv.otherPartyName }}</span>
@@ -49,13 +49,13 @@
       </div>
     </div>
 
-    <!-- 聊天区域 -->
+    <!-- 中栏：聊天区域 -->
     <div class="chat-main" v-if="activeConversation">
       <div class="chat-header">
         <el-button text @click="closeChat" class="back-btn">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </el-button>
-        <el-avatar :size="36" :src="activeConversation.otherPartyAvatar" />
+        <el-avatar :size="32" :src="activeConversation.otherPartyAvatar" />
         <div class="chat-header-info">
           <span class="chat-header-name">{{ activeConversation.otherPartyName }}</span>
           <span class="chat-header-product">{{ activeConversation.productTitle }}</span>
@@ -83,7 +83,7 @@
         <el-input
           v-model="inputText"
           type="textarea"
-          :rows="2"
+          :rows="1"
           placeholder="输入消息..."
           resize="none"
           @keydown.enter.exact.prevent="sendMessage"
@@ -96,8 +96,18 @@
 
     <!-- 未选中会话 -->
     <div v-else class="chat-main chat-empty-main">
-      <el-icon :size="64" color="#e2e8f0"><ChatLineSquare /></el-icon>
+      <el-icon :size="56" color="#e2e8f0"><ChatLineSquare /></el-icon>
       <p>选择一条消息开始聊天</p>
+    </div>
+
+    <!-- 右栏：卖家信息 -->
+    <div v-if="activeConversation && !isMobile" class="chat-seller">
+      <div class="seller-panel">
+        <el-avatar :size="64" :src="activeConversation.otherPartyAvatar" />
+        <h4 class="seller-name">{{ activeConversation.otherPartyName }}</h4>
+        <p class="seller-product" v-if="activeConversation.productTitle">{{ activeConversation.productTitle }}</p>
+        <el-button type="primary" @click="goToShop">进入店铺</el-button>
+      </div>
     </div>
 
     <!-- 移动端：返回按钮 -->
@@ -108,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChatDotRound, ChatLineSquare, ArrowLeft } from '@element-plus/icons-vue'
 import { chatApi } from '@/api/modules/chat'
@@ -138,6 +148,12 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const isMobile = ref(window.innerWidth < 768)
 const currentUserId = computed(() => auth.user?.id || 0)
+const otherPartyId = computed(() => {
+  if (!activeConversation.value) return 0
+  return activeConversation.value.buyerId === currentUserId.value
+    ? activeConversation.value.sellerId
+    : activeConversation.value.buyerId
+})
 
 const formatTime = (dateStr: string | null) => {
   if (!dateStr) return ''
@@ -157,6 +173,7 @@ const loadConversations = async () => {
   error.value = false
   try {
     conversations.value = await chatApi.listConversations()
+    notificationStore.chatUnreadCount = conversations.value.reduce((sum, c) => sum + c.unreadCount, 0)
   } catch {
     error.value = true
   } finally {
@@ -276,6 +293,12 @@ const scrollToBottom = () => {
   })
 }
 
+const goToShop = () => {
+  if (otherPartyId.value) {
+    router.push(`/shop/${otherPartyId.value}`)
+  }
+}
+
 const onScroll = () => {
   if (!msgListRef.value) return
   if (msgListRef.value.scrollTop === 0 && hasMore.value) {
@@ -288,6 +311,7 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
+  notificationStore.chatUnreadCount = 0
   await loadConversations()
   window.addEventListener('resize', handleResize)
 
@@ -334,9 +358,9 @@ onUnmounted(() => {
 <style scoped>
 .chat-page {
   display: flex;
-  height: calc(100vh - var(--header-height) - 48px);
-  max-width: var(--max-width);
-  margin: 0 auto;
+  height: calc(100vh - var(--header-height) - 24px);
+  max-width: 1000px;
+  margin: 12px auto;
   background: var(--bg-white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
@@ -344,21 +368,21 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* ===== 侧边栏 ===== */
+/* ===== 左栏：会话列表 ===== */
 .chat-sidebar {
-  width: 320px;
+  width: 260px;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
 }
 .sidebar-header {
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
 }
 .sidebar-header h3 {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 700;
 }
 .empty-chat {
@@ -367,9 +391,9 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--text-muted);
-  padding: 24px;
+  padding: 20px;
 }
 .empty-chat p {
   font-size: var(--text-base);
@@ -377,17 +401,14 @@ onUnmounted(() => {
   margin: 0;
 }
 .empty-chat span {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
-.conv-list {
-  flex: 1;
-  overflow-y: auto;
-}
+.conv-list { flex: 1; overflow-y: auto; }
 .conv-item {
   display: flex;
-  gap: 12px;
-  padding: 14px 20px;
+  gap: 10px;
+  padding: 10px 16px;
   cursor: pointer;
   transition: background var(--transition-fast);
   border-bottom: 1px solid var(--border-color);
@@ -400,17 +421,17 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
-.conv-name { font-size: var(--text-base); font-weight: 600; }
-.conv-time { font-size: var(--text-xs); color: var(--text-muted); flex-shrink: 0; margin-left: 8px; }
+.conv-name { font-size: var(--text-sm); font-weight: 600; }
+.conv-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; margin-left: 6px; }
 .conv-bottom {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .conv-preview {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -418,15 +439,15 @@ onUnmounted(() => {
   flex: 1;
 }
 .conv-product {
-  font-size: var(--text-xs);
+  font-size: 11px;
   color: var(--el-color-primary);
-  margin-top: 2px;
+  margin-top: 1px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* ===== 聊天主区域 ===== */
+/* ===== 中栏：聊天主区域 ===== */
 .chat-main {
   flex: 1;
   display: flex;
@@ -436,46 +457,43 @@ onUnmounted(() => {
 .chat-empty-main {
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   color: var(--text-muted);
 }
 
 .chat-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 .back-btn { display: none; }
 .chat-header-info { display: flex; flex-direction: column; }
-.chat-header-name { font-size: var(--text-base); font-weight: 600; }
-.chat-header-product { font-size: var(--text-xs); color: var(--text-muted); }
+.chat-header-name { font-size: var(--text-sm); font-weight: 600; }
+.chat-header-product { font-size: 11px; color: var(--text-muted); }
 
 .msg-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 12px 16px;
 }
-.load-more {
-  text-align: center;
-  margin-bottom: 12px;
-}
+.load-more { text-align: center; margin-bottom: 10px; }
 
 .msg-bubble {
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
-  max-width: 60%;
+  margin-bottom: 12px;
+  max-width: 70%;
 }
 .msg-bubble.mine { align-self: flex-end; align-items: flex-end; }
 
 .bubble-content {
   background: var(--el-color-primary-light-9);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: var(--text-base);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: var(--text-sm);
   line-height: 1.5;
   word-break: break-word;
   white-space: pre-wrap;
@@ -485,37 +503,68 @@ onUnmounted(() => {
   color: #fff;
 }
 .bubble-time {
-  font-size: var(--text-xs);
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .chat-input-area {
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-top: 1px solid var(--border-color);
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-end;
   flex-shrink: 0;
 }
 .chat-input-area :deep(.el-textarea__inner) {
   border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+/* ===== 右栏：卖家面板 ===== */
+.chat-seller {
+  width: 200px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-color);
+  background: var(--bg-page);
+}
+.seller-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 20px;
+  gap: 10px;
+  text-align: center;
+}
+.seller-panel .seller-name {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+.seller-panel .seller-product {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.seller-panel .el-button {
+  margin-top: 8px;
+  width: 100%;
 }
 
 /* ===== 移动端 ===== */
 @media (max-width: 768px) {
   .chat-page {
     height: calc(100vh - 56px);
+    margin: 0;
     border-radius: 0;
     border: none;
+    max-width: none;
   }
   .chat-sidebar {
     width: 100%;
     border-right: none;
   }
-  .chat-sidebar.hidden {
-    display: none;
-  }
+  .chat-sidebar.hidden { display: none; }
   .chat-main {
     position: fixed;
     inset: 56px 0 0 0;
@@ -527,7 +576,6 @@ onUnmounted(() => {
     flex: 1;
   }
   .back-btn { display: inline-flex; }
-
-  .msg-bubble { max-width: 80%; }
+  .msg-bubble { max-width: 85%; }
 }
 </style>

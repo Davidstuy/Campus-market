@@ -59,7 +59,7 @@
               <el-button size="small" text type="primary" @click="$router.push(`/products/${row.id}`)">
                 查看
               </el-button>
-              <el-button size="small" text type="primary" :disabled="row.status !== 'ACTIVE'" @click="openEdit(row)">
+              <el-button size="small" text type="primary" :disabled="row.status !== 'ACTIVE'" @click="$router.push(`/publish/${row.id}`)">
                 编辑
               </el-button>
               <template v-if="row.status === 'ACTIVE'">
@@ -99,43 +99,13 @@
       </div>
     </template>
 
-    <el-dialog v-model="editVisible" title="编辑商品" width="600px" :close-on-click-modal="false">
-      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="editForm.title" placeholder="请输入商品标题" maxlength="50" show-word-limit />
-        </el-form-item>
-        <el-form-item label="分类" prop="categoryId">
-          <el-select v-model="editForm.categoryId" placeholder="请选择分类">
-            <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="价格" prop="price">
-          <el-input-number v-model="editForm.price" :min="0" :precision="2" :step="10" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="editForm.description" type="textarea" :rows="3" maxlength="500" show-word-limit />
-        </el-form-item>
-        <el-form-item label="微信">
-          <el-input v-model="editForm.contactWechat" placeholder="选填" />
-        </el-form-item>
-        <el-form-item label="QQ">
-          <el-input v-model="editForm.contactQq" placeholder="选填" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" :loading="editSubmitting" @click="handleEditSubmit">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ref, onMounted } from 'vue'
 import { productApi } from '@/api/modules/product'
-import { categoryApi } from '@/api/modules/category'
-import type { Product, Category } from '@/types'
+import type { Product } from '@/types'
 import { PRODUCT_STATUS } from '@/utils/constants'
 
 const loading = ref(false)
@@ -182,75 +152,6 @@ const handleDelete = async (id: number) => {
     ElMessage.success('删除成功')
     fetchData()
   } catch { /* cancelled */ }
-}
-
-const editVisible = ref(false)
-const editSubmitting = ref(false)
-const editFormRef = ref<FormInstance>()
-const editingId = ref<number | null>(null)
-const categories = ref<Category[]>([])
-
-const editForm = reactive({
-  title: '',
-  categoryId: null as number | null,
-  price: 0,
-  description: '',
-  coverImage: '',
-  images: [] as string[],
-  contactWechat: '',
-  contactQq: '',
-})
-
-const editRules: FormRules = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-}
-
-const openEdit = async (product: Product) => {
-  if (categories.value.length === 0) {
-    try {
-      categories.value = await categoryApi.list()
-    } catch {
-      ElMessage.error('加载分类失败')
-      return
-    }
-  }
-  editingId.value = product.id
-  editForm.title = product.title
-  editForm.categoryId = product.categoryId
-  editForm.price = product.price
-  editForm.description = product.description || ''
-  editForm.coverImage = product.coverImage || ''
-  editForm.images = product.images?.map(img => img.url) || []
-  editForm.contactWechat = product.contactWechat || ''
-  editForm.contactQq = product.contactQq || ''
-  editVisible.value = true
-}
-
-const handleEditSubmit = async () => {
-  const valid = await editFormRef.value?.validate().catch(() => false)
-  if (!valid || editingId.value === null) return
-
-  editSubmitting.value = true
-  try {
-    await productApi.update(editingId.value, {
-      title: editForm.title,
-      price: editForm.price,
-      categoryId: editForm.categoryId!,
-      description: editForm.description,
-      coverImage: editForm.coverImage,
-      images: editForm.images,
-      contactWechat: editForm.contactWechat,
-      contactQq: editForm.contactQq,
-    })
-    ElMessage.success('保存成功')
-    editVisible.value = false
-    fetchData()
-  } catch { /* error handled in interceptor */ }
-  finally {
-    editSubmitting.value = false
-  }
 }
 
 onMounted(fetchData)

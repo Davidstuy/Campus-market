@@ -42,6 +42,22 @@ public class UserController {
     }
 
     /**
+     * 公开接口：根据 ID 获取卖家简要信息（头像、昵称）
+     */
+    @GetMapping("/public/{id}")
+    public ApiResult<Map<String, String>> getPublicInfo(@PathVariable Long id) {
+        User user = userService.getById(id);
+        if (user == null) {
+            return ApiResult.error(404, "用户不存在");
+        }
+        Map<String, String> info = new HashMap<>();
+        info.put("id", String.valueOf(user.getId()));
+        info.put("nickname", user.getNickname());
+        info.put("avatarUrl", user.getAvatarUrl());
+        return ApiResult.success(info);
+    }
+
+    /**
      * 更新个人资料（昵称、手机号、微信、QQ）
      *
      * MyBatis-Plus 的 updateById 会根据主键 id 更新，只更新非 null 字段不够精确，

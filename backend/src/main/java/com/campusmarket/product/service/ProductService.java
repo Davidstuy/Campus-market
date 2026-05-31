@@ -14,7 +14,7 @@ public interface ProductService extends IService<Product> {
     /**
      * 分页查询商品列表（支持分类筛选、关键词搜索、排序）
      */
-    Page<ProductVO> listProducts(int page, int size, Long categoryId, String keyword, String sort);
+    Page<ProductVO> listProducts(int page, int size, Long categoryId, Long sellerId, String keyword, String sort);
 
     /**
      * 查询商品详情（含卖家信息、分类信息、图片列表）
