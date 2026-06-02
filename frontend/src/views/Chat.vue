@@ -262,9 +262,16 @@ const loadMessages = async () => {
     // 清除通知铃铛中的 CHAT 未读（先标记后拉取，避免竞态）
     await notificationApi.markChatRead()
     notificationStore.fetchUnreadCount()
-    // 更新本地未读数
+    // 更新本地未读数，并扣减通知铃铛中的 chat 未读数
     const conv = conversations.value.find(c => c.id === activeConversation.value!.id)
-    if (conv) conv.unreadCount = 0
+    if (conv) {
+      notificationStore.chatUnreadCount = Math.max(0,
+        notificationStore.chatUnreadCount - conv.unreadCount)
+      conv.unreadCount = 0
+    }
+    // 滚动到底部
+    await nextTick()
+    scrollToBottom()
   } catch {
     ElMessage.error('加载消息失败')
   }
@@ -423,7 +430,6 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
-  notificationStore.chatUnreadCount = 0
   await loadConversations()
   window.addEventListener('resize', handleResize)
 
@@ -435,11 +441,21 @@ onMounted(async () => {
       c.id === chatMsg.conversationId
     )
     if (conv) {
-      conv.lastMessage = chatMsg.content
+      const preview = chatMsg.messageType === 'IMAGE' ? '[图片]'
+        : chatMsg.messageType === 'VIDEO' ? '[视频]'
+        : chatMsg.content
+      conv.lastMessage = preview
       conv.lastMessageAt = chatMsg.createdAt
-      if (activeConversation.value?.id !== chatMsg.conversationId) {
+      if (activeConversation.value?.id === chatMsg.conversationId) {
+        // store 已 +1，但用户正在看这个会话，撤销（消息已实时展示）
+        notificationStore.chatUnreadCount = Math.max(0, notificationStore.chatUnreadCount - 1)
+      } else {
+        // 非活跃会话，store 已 +1，这里只更新会话未读数
         conv.unreadCount++
       }
+    } else {
+      // 新会话（第一次收到某人消息），刷新会话列表
+      loadConversations()
     }
 
     // 如果当前正在看这个会话，直接添加到消息列表
@@ -470,9 +486,10 @@ onUnmounted(() => {
 <style scoped>
 .chat-page {
   display: flex;
-  height: calc(100vh - var(--header-height) - 24px);
-  max-width: 1000px;
-  margin: 12px auto;
+  /* 100vh - header(64px) - layout上下padding(64px) - 自身margin(16px) */
+  height: calc(100vh - var(--header-height) - var(--section-gap) * 2 - 16px);
+  max-width: 860px;
+  margin: 8px auto;
   background: var(--bg-white);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
@@ -482,7 +499,7 @@ onUnmounted(() => {
 
 /* ===== 左栏：会话列表 ===== */
 .chat-sidebar {
-  width: 260px;
+  width: 200px;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -597,6 +614,8 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
 }
 .load-more { text-align: center; margin-bottom: 10px; }
 
@@ -605,6 +624,7 @@ onUnmounted(() => {
   flex-direction: column;
   margin-bottom: 12px;
   max-width: 70%;
+  align-self: flex-start;
 }
 .msg-bubble.mine { align-self: flex-end; align-items: flex-end; }
 
@@ -666,7 +686,7 @@ onUnmounted(() => {
 
 /* ===== 右栏：卖家面板 ===== */
 .chat-seller {
-  width: 200px;
+  width: 170px;
   flex-shrink: 0;
   border-left: 1px solid var(--border-color);
   background: var(--bg-page);
@@ -697,9 +717,8 @@ onUnmounted(() => {
 /* ===== 移动端 ===== */
 @media (max-width: 768px) {
   .chat-page {
-    height: calc(100vh - 56px);
+    height: 100vh;
     margin: 0;
-    border-radius: 0;
     border: none;
     max-width: none;
   }

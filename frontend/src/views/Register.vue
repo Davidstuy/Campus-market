@@ -11,6 +11,9 @@
     <el-form-item label="用户名" prop="username">
       <el-input v-model="form.username" placeholder="请输入用户名" />
     </el-form-item>
+    <el-form-item label="手机号" prop="phone">
+      <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="11" />
+    </el-form-item>
     <el-form-item label="密码" prop="password">
       <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" />
     </el-form-item>
@@ -46,6 +49,7 @@ const registerError = ref('')
 
 const form = reactive({
   username: '',
+  phone: '',
   password: '',
   confirmPassword: '',
 })
@@ -61,7 +65,11 @@ const validateConfirm = (_rule: unknown, value: string, callback: (e?: Error) =>
 const rules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' },
+    { max: 9, message: '用户名长度需小于10', trigger: 'blur' },
+  ],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },

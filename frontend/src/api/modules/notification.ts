@@ -21,4 +21,12 @@ export const notificationApi = {
   markChatRead(): Promise<void> {
     return request.put('/v1/notifications/read-chat')
   },
+
+  deleteOne(id: number): Promise<void> {
+    return request.delete(`/v1/notifications/${id}`)
+  },
+
+  deleteAll(): Promise<void> {
+    return request.delete('/v1/notifications/all')
+  },
 }

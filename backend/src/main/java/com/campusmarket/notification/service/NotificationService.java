@@ -17,4 +17,8 @@ public interface NotificationService extends IService<Notification> {
     void createNotification(Long recipientId, String type, String title, String content, Long orderId);
 
     void markChatAsRead(Long recipientId);
+
+    void deleteNotification(Long id, Long recipientId);
+
+    void deleteAllNotifications(Long recipientId);
 }

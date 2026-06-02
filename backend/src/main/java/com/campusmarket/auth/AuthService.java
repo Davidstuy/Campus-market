@@ -42,11 +42,19 @@ public class AuthService {
             throw new BusinessException("用户名已存在");
         }
 
+        // 检查手机号唯一性
+        QueryWrapper<User> phoneWrapper = new QueryWrapper<>();
+        phoneWrapper.eq("phone", request.getPhone());
+        if (userMapper.selectCount(phoneWrapper) > 0) {
+            throw new BusinessException("该手机号已注册");
+        }
+
         // 创建用户
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));  // bcrypt 加密！
         user.setNickname(request.getUsername());  // 默认昵称 = 用户名
+        user.setPhone(request.getPhone());
 
         userMapper.insert(user);
     }

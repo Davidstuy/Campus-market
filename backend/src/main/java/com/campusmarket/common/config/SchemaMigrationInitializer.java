@@ -22,6 +22,8 @@ public class SchemaMigrationInitializer {
         migrateChatMessage();
         migrateProductComment();
         migrateCommunityTopic();
+        migrateUserPhoneUnique();
+        cleanChatNotifications();
         log.info("Schema migration completed");
     }
 
@@ -59,6 +61,28 @@ public class SchemaMigrationInitializer {
         }
         // 添加唯一约束，防止以后再插入重复主题
         safeExecute("ALTER TABLE community_topic ADD UNIQUE INDEX uk_name (name)");
+    }
+
+    private void cleanChatNotifications() {
+        try {
+            int deleted = jdbcTemplate.update("DELETE FROM notification WHERE type = 'CHAT'");
+            if (deleted > 0) {
+                log.info("Cleaned {} CHAT notifications", deleted);
+            }
+        } catch (Exception e) {
+            log.debug("Skip CHAT notification cleanup: {}", e.getMessage().split("\n")[0]);
+        }
+    }
+
+    private void migrateUserPhoneUnique() {
+        // 先把空手机号设为 NULL，否则 UNIQUE 约束会冲突
+        try {
+            jdbcTemplate.execute("UPDATE user SET phone = NULL WHERE phone = ''");
+        } catch (Exception e) {
+            log.debug("Skip phone nullify: {}", e.getMessage().split("\n")[0]);
+        }
+        // 添加手机号唯一索引（NULL 值不冲突）
+        safeExecute("CREATE UNIQUE INDEX uk_phone ON user(phone)");
     }
 
     private void safeExecute(String sql) {

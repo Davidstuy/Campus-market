@@ -13,7 +13,7 @@
         <template v-if="auth.isLoggedIn()">
           <NotificationBell />
           <span class="icon-label" @click="$router.push('/notifications')">通知</span>
-          <el-badge :value="chatUnread" :max="99" :hidden="!chatUnread">
+          <el-badge :value="notificationStore.chatUnreadCount" :max="99" :hidden="notificationStore.chatUnreadCount === 0">
             <el-icon :size="20" class="chat-nav-icon" @click="$router.push('/chat')">
               <ChatDotRound />
             </el-icon>
@@ -60,7 +60,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { ArrowDown, ChatDotRound } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
@@ -72,7 +71,6 @@ const auth = useAuthStore()
 const notificationStore = useNotificationStore()
 const router = useRouter()
 const { isScrolled } = useScrollObserver(10)
-const chatUnread = computed(() => notificationStore.chatUnreadCount)
 
 const handleLogout = () => {
   auth.logout()

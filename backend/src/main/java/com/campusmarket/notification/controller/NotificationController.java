@@ -55,4 +55,18 @@ public class NotificationController {
         notificationService.markChatAsRead(userId);
         return ApiResult.success();
     }
+
+    @DeleteMapping("/{id}")
+    public ApiResult<Void> deleteOne(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = getCurrentUserId(request);
+        notificationService.deleteNotification(id, userId);
+        return ApiResult.success();
+    }
+
+    @DeleteMapping("/all")
+    public ApiResult<Void> deleteAll(HttpServletRequest request) {
+        Long userId = getCurrentUserId(request);
+        notificationService.deleteAllNotifications(userId);
+        return ApiResult.success();
+    }
 }

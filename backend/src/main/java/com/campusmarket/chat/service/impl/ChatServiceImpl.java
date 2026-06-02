@@ -13,9 +13,6 @@ import com.campusmarket.chat.mapper.ChatConversationMapper;
 import com.campusmarket.chat.mapper.ChatMessageMapper;
 import com.campusmarket.chat.service.ChatService;
 import com.campusmarket.common.exception.BusinessException;
-import com.campusmarket.notification.dto.NotificationVO;
-import com.campusmarket.notification.service.NotificationPushService;
-import com.campusmarket.notification.service.NotificationService;
 import com.campusmarket.product.entity.Product;
 import com.campusmarket.product.mapper.ProductMapper;
 import com.campusmarket.user.entity.User;
@@ -38,8 +35,6 @@ public class ChatServiceImpl extends ServiceImpl<ChatConversationMapper, ChatCon
     private final ChatMessageMapper chatMessageMapper;
     private final UserMapper userMapper;
     private final ProductMapper productMapper;
-    private final NotificationService notificationService;
-    private final NotificationPushService notificationPushService;
 
     @Override
     public List<ConversationVO> listConversations(Long userId) {
@@ -63,6 +58,10 @@ public class ChatServiceImpl extends ServiceImpl<ChatConversationMapper, ChatCon
         for (ChatConversation c : conversations) {
             Long otherId = c.getBuyerId().equals(userId) ? c.getSellerId() : c.getBuyerId();
             userIds.add(otherId);
+            // SUPPORT 会话：确保管理员（sellerId）也在 userMap 中
+            if ("SUPPORT".equals(c.getType())) {
+                userIds.add(c.getSellerId());
+            }
         }
         Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream()
                 .peek(u -> u.setPassword(null))
@@ -206,9 +205,6 @@ public class ChatServiceImpl extends ServiceImpl<ChatConversationMapper, ChatCon
         vo.setVideoUrl(msg.getVideoUrl());
         vo.setIsRead(msg.getIsRead());
         vo.setCreatedAt(msg.getCreatedAt());
-
-        // 为接收者创建通知
-        notifyNewMessage(senderId, receiverId, lastMsgPreview);
 
         return vo;
     }
@@ -359,27 +355,5 @@ public class ChatServiceImpl extends ServiceImpl<ChatConversationMapper, ChatCon
                 yield content.length() > 50 ? content.substring(0, 50) + "..." : content;
             }
         };
-    }
-
-    private void notifyNewMessage(Long senderId, Long receiverId, String content) {
-        User sender = userMapper.selectById(senderId);
-        String senderName = sender != null
-                ? (sender.getNickname() != null && !sender.getNickname().isEmpty()
-                    ? sender.getNickname()
-                    : sender.getUsername())
-                : "用户";
-
-        String preview = content.length() > 50 ? content.substring(0, 50) + "..." : content;
-
-        String title = senderName + " 发来新消息";
-
-        notificationService.createNotification(receiverId, "CHAT", title, preview, null);
-
-        NotificationVO vo = new NotificationVO();
-        vo.setType("CHAT");
-        vo.setTitle(title);
-        vo.setContent(preview);
-        vo.setIsRead(0);
-        notificationPushService.pushNotification(String.valueOf(receiverId), vo);
     }
 }

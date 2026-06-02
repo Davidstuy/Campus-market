@@ -2,9 +2,20 @@
   <div class="notifications-page">
     <div class="page-header">
       <h2 class="page-title">消息通知</h2>
-      <el-button v-if="store.unreadCount > 0" text type="primary" @click="store.markAllAsRead()">
-        全部已读
-      </el-button>
+      <div class="header-actions">
+        <el-button v-if="store.unreadCount > 0" text type="primary" @click="store.markAllAsRead()">
+          全部已读
+        </el-button>
+        <el-popconfirm
+          v-if="store.notifications.length > 0"
+          title="确定删除全部通知？"
+          @confirm="handleDeleteAll"
+        >
+          <template #reference>
+            <el-button text type="danger">清空通知</el-button>
+          </template>
+        </el-popconfirm>
+      </div>
     </div>
 
     <el-skeleton v-if="loading" :rows="5" animated />
@@ -41,6 +52,15 @@
           <div class="notif-time">{{ formatTime(item.createdAt) }}</div>
         </div>
         <div v-if="item.isRead === 0" class="notif-dot"></div>
+        <el-button
+          class="notif-delete"
+          text
+          circle
+          size="small"
+          @click.stop="handleDelete(item.id)"
+        >
+          <el-icon :size="14"><Close /></el-icon>
+        </el-button>
       </div>
 
       <div v-if="store.total > 20" class="pagination">
@@ -59,8 +79,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell } from '@element-plus/icons-vue'
+import { Bell, Close } from '@element-plus/icons-vue'
 import { useNotificationStore } from '@/stores/notification'
+import { notificationApi } from '@/api/modules/notification'
+import { ElMessage } from 'element-plus'
 import type { Notification } from '@/types'
 
 const router = useRouter()
@@ -100,10 +122,36 @@ const handleClick = (item: Notification) => {
   if (item.isRead === 0) {
     store.markAsRead(item.id)
   }
-  if (item.type === 'CHAT') {
-    router.push('/chat')
-  } else if (item.orderId) {
+  if (item.orderId) {
     router.push(`/orders/${item.orderId}`)
+  }
+}
+
+const handleDelete = async (id: number) => {
+  try {
+    await notificationApi.deleteOne(id)
+    const idx = store.notifications.findIndex(n => n.id === id)
+    if (idx > -1) {
+      const wasUnread = store.notifications[idx].isRead === 0
+      store.notifications.splice(idx, 1)
+      store.total--
+      if (wasUnread) store.unreadCount = Math.max(0, store.unreadCount - 1)
+    }
+    ElMessage.success('已删除')
+  } catch {
+    // 响应拦截器已统一显示错误，此处静默
+  }
+}
+
+const handleDeleteAll = async () => {
+  try {
+    await notificationApi.deleteAll()
+    store.notifications.splice(0, store.notifications.length)
+    store.total = 0
+    store.unreadCount = 0
+    ElMessage.success('已清空')
+  } catch {
+    // 响应拦截器已统一显示错误，此处静默
   }
 }
 
@@ -130,6 +178,10 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: -0.3px;
   margin: 0;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .notification-list {
@@ -209,6 +261,21 @@ onMounted(() => {
   flex-shrink: 0;
   margin-top: 6px;
   margin-left: 8px;
+}
+
+.notif-delete {
+  flex-shrink: 0;
+  margin-left: 8px;
+  margin-top: 2px;
+  opacity: 0;
+  color: var(--text-muted);
+  transition: opacity 0.2s, color 0.2s;
+}
+.notification-item:hover .notif-delete {
+  opacity: 1;
+}
+.notif-delete:hover {
+  color: var(--el-color-danger);
 }
 
 .pagination {

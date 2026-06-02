@@ -18,6 +18,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
     public Page<Notification> listByRecipient(Long recipientId, int page, int size) {
         LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Notification::getRecipientId, recipientId)
+               .ne(Notification::getType, "CHAT")  // 聊天消息不显示在通知列表
                .orderByDesc(Notification::getCreatedAt);
         return this.page(new Page<>(page, size), wrapper);
     }
@@ -26,6 +27,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
     public long countUnread(Long recipientId) {
         return this.count(new LambdaQueryWrapper<Notification>()
                 .eq(Notification::getRecipientId, recipientId)
+                .ne(Notification::getType, "CHAT")   // 排除聊天消息
                 .eq(Notification::getIsRead, 0));
     }
 
@@ -60,6 +62,26 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
         notification.setOrderId(orderId);
         notification.setIsRead(0);
         this.save(notification);
+    }
+
+    @Override
+    @Transactional
+    public void deleteNotification(Long id, Long recipientId) {
+        Notification notification = this.getById(id);
+        if (notification == null || !notification.getRecipientId().equals(recipientId)) {
+            throw new BusinessException(404, "通知不存在或无权操作");
+        }
+        // 使用 Mapper.deleteById 直接物理删除，避免全局 logic-delete-field 配置干扰
+        this.getBaseMapper().deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllNotifications(Long recipientId) {
+        // 使用 Mapper.delete 直接物理删除
+        LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Notification::getRecipientId, recipientId);
+        this.getBaseMapper().delete(wrapper);
     }
 
     @Override

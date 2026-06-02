@@ -35,6 +35,15 @@
         <h2>{{ seller.nickname }} 的店铺</h2>
         <p class="product-count">共 {{ total }} 件在售商品</p>
       </div>
+      <el-button
+        v-if="canMessage"
+        type="primary"
+        round
+        @click="goMessage"
+      >
+        <el-icon><ChatDotRound /></el-icon>
+        私信
+      </el-button>
     </div>
 
     <div v-if="products.length > 0" class="product-grid">
@@ -56,15 +65,25 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { UserFilled } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import { UserFilled, ChatDotRound } from '@element-plus/icons-vue'
 import { productApi } from '@/api/modules/product'
 import { userApi } from '@/api/modules/user'
+import { chatApi } from '@/api/modules/chat'
+import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
 import ProductCard from '@/components/product/ProductCard.vue'
 import type { Product } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 const sellerId = computed(() => Number(route.params.sellerId))
+
+// 当前用户不是卖家本人、且已登录时才能私信
+const canMessage = computed(() => {
+  return auth.isLoggedIn() && auth.user?.id !== sellerId.value
+})
 
 const seller = reactive({ nickname: '', avatarUrl: '' })
 const products = ref<Product[]>([])
@@ -100,6 +119,15 @@ const loadProducts = async (page: number) => {
     products.value = data.records
     total.value = data.total
   } catch { /* ignore */ }
+}
+
+const goMessage = async () => {
+  try {
+    const conv = await chatApi.getOrCreateConversation(sellerId.value, 0)
+    router.push(`/chat?conversation=${conv.id}`)
+  } catch {
+    ElMessage.error('发起会话失败')
+  }
 }
 
 watch(sellerId, () => {
@@ -147,6 +175,9 @@ onMounted(fetchData)
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.shop-header-info {
+  flex: 1;
 }
 .shop-header-info h2 {
   margin: 0 0 6px;

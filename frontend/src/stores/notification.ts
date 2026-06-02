@@ -105,7 +105,9 @@ export const useNotificationStore = defineStore('notification', () => {
                 try {
                   const body = JSON.parse(message.body)
                   console.log('[WS] Chat message arrived:', body.content)
+                  // 收到私信就 +1，确保用户在任何页面都能看到角标
                   chatUnreadCount.value++
+                  // 转发给 Chat.vue 回调处理会话列表更新和消息展示
                   chatCallbacks.forEach(cb => cb(body))
                 } catch { /* ignore malformed */ }
               })

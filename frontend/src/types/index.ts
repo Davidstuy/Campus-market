@@ -21,6 +21,7 @@ export interface RegisterForm {
   username: string
   password: string
   confirmPassword: string
+  phone: string
 }
 
 // ============ 分类 ============

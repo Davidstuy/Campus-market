@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 import router from '@/router'
 
 // VITE_API_BASE_URL 用于生产环境指向后端完整地址（如 http://172.17.120.133:8080/api）
@@ -34,10 +35,10 @@ request.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       router.push('/login')
-      message.error('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       return Promise.reject(new Error(message))
     }
-    message.error(message || '请求失败')
+    ElMessage.error(message || '请求失败')
     return Promise.reject(new Error(message))
   },
   (error) => {
