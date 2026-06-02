@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS `user` (
     phone       VARCHAR(20)  DEFAULT ''      COMMENT '手机号',
     wechat      VARCHAR(50)  DEFAULT ''      COMMENT '微信号',
     qq          VARCHAR(20)  DEFAULT ''      COMMENT 'QQ 号',
+    role        VARCHAR(20)  NOT NULL DEFAULT 'USER'  COMMENT '角色: USER/ADMIN',
+    status      VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '状态: ACTIVE/BANNED',
     created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
@@ -52,8 +54,10 @@ CREATE TABLE IF NOT EXISTS `product` (
     price           DECIMAL(10,2) NOT NULL       COMMENT '价格',
     category_id     BIGINT       NOT NULL        COMMENT '所属分类',
     seller_id       BIGINT       NOT NULL        COMMENT '发布者',
-    status          VARCHAR(20)  DEFAULT 'ACTIVE' COMMENT '状态: ACTIVE/SOLD/DELISTED',
-    cover_image     VARCHAR(500) DEFAULT ''      COMMENT '封面图 URL',
+    status          VARCHAR(20)  DEFAULT 'PENDING_REVIEW' COMMENT '状态: PENDING_REVIEW/ACTIVE/REJECTED/SOLD/DELISTED',
+    review_reason   VARCHAR(500) DEFAULT NULL              COMMENT '驳回原因',
+    risk_level      VARCHAR(20)  DEFAULT NULL              COMMENT '风险等级: LOW/HIGH',
+    cover_image     VARCHAR(500) DEFAULT ''                COMMENT '封面图 URL',
     contact_wechat  VARCHAR(50)  DEFAULT ''      COMMENT '联系方式-微信',
     contact_qq      VARCHAR(20)  DEFAULT ''      COMMENT '联系方式-QQ',
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
@@ -127,9 +131,12 @@ CREATE TABLE IF NOT EXISTS `chat_message` (
     conversation_id BIGINT       NOT NULL COMMENT '会话ID',
     sender_id       BIGINT       NOT NULL COMMENT '发送者',
     receiver_id     BIGINT       NOT NULL COMMENT '接收者',
-    content         VARCHAR(1000) NOT NULL COMMENT '消息内容',
-    is_read         TINYINT(1)   DEFAULT 0 COMMENT '是否已读',
-    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    content         VARCHAR(2000) DEFAULT '' COMMENT '消息文本（支持emoji）',
+    message_type    VARCHAR(10)   NOT NULL DEFAULT 'TEXT' COMMENT '消息类型：TEXT/IMAGE/VIDEO',
+    image_url       VARCHAR(500)  DEFAULT NULL COMMENT '图片URL（IMAGE类型）',
+    video_url       VARCHAR(500)  DEFAULT NULL COMMENT '视频URL（VIDEO类型）',
+    is_read         TINYINT(1)    DEFAULT 0 COMMENT '是否已读',
+    created_at      DATETIME      DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_conv_created (conversation_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
 
@@ -138,10 +145,12 @@ CREATE TABLE IF NOT EXISTS `product_comment` (
     id         BIGINT       AUTO_INCREMENT PRIMARY KEY,
     product_id  BIGINT       NOT NULL COMMENT '所属商品',
     user_id     BIGINT       NOT NULL COMMENT '评论者',
-    content         VARCHAR(500) NOT NULL COMMENT '评论内容',
-    parent_id       BIGINT       DEFAULT NULL COMMENT '父评论ID，NULL=顶级评论',
-    reply_to_user_id BIGINT      DEFAULT NULL COMMENT '被回复用户ID',
-    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    content         VARCHAR(2000) NOT NULL COMMENT '评论内容（支持emoji）',
+    image_url       VARCHAR(500)  DEFAULT NULL COMMENT '可选图片URL',
+    video_url       VARCHAR(500)  DEFAULT NULL COMMENT '可选视频URL',
+    parent_id       BIGINT        DEFAULT NULL COMMENT '父评论ID，NULL=顶级评论',
+    reply_to_user_id BIGINT       DEFAULT NULL COMMENT '被回复用户ID',
+    created_at      DATETIME      DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_product_created (product_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品评论表';
 
@@ -166,3 +175,67 @@ CREATE TABLE IF NOT EXISTS `favorite` (
     INDEX idx_user (user_id),
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收藏表';
+
+-- =============================================
+-- 社区模块
+-- =============================================
+
+-- 社区主题表
+CREATE TABLE IF NOT EXISTS `community_topic` (
+    id         BIGINT      AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(50) NOT NULL COMMENT '主题名称',
+    icon       VARCHAR(50) DEFAULT '' COMMENT '图标',
+    sort_order INT         DEFAULT 0 COMMENT '排序',
+    created_at DATETIME    DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='社区主题表';
+
+INSERT IGNORE INTO `community_topic` (name, icon, sort_order) VALUES
+    ('二次元',   'MagicStick',      1),
+    ('穿搭',     'Shirt',           2),
+    ('数码',     'Cellphone',        3),
+    ('美食',     'DishDot',         4),
+    ('校园生活', 'School',          5),
+    ('求助',     'QuestionFilled',   6),
+    ('闲置交换', 'Present',         7),
+    ('游戏',     'VideoGame',       8),
+    ('运动',     'Football',        9),
+    ('其他',     'MoreFilled',      10);
+
+-- 社区帖子表
+CREATE TABLE IF NOT EXISTS `community_post` (
+    id         BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    user_id    BIGINT       NOT NULL COMMENT '作者ID',
+    topic_id   BIGINT       NOT NULL COMMENT '主题ID',
+    title      VARCHAR(200) NOT NULL COMMENT '标题',
+    content    TEXT         NOT NULL COMMENT '正文（支持emoji）',
+    created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_created (user_id, created_at),
+    INDEX idx_topic_created (topic_id, created_at),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='社区帖子表';
+
+-- 社区帖子媒体表（图片/视频）
+CREATE TABLE IF NOT EXISTS `community_post_media` (
+    id         BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    post_id    BIGINT       NOT NULL COMMENT '帖子ID',
+    media_type VARCHAR(10)  NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE/VIDEO',
+    url        VARCHAR(500) NOT NULL COMMENT '媒体URL',
+    sort_order INT          DEFAULT 0 COMMENT '排序',
+    created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_post_sort (post_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子媒体表';
+
+-- 社区评论表
+CREATE TABLE IF NOT EXISTS `community_comment` (
+    id              BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    post_id         BIGINT       NOT NULL COMMENT '帖子ID',
+    user_id         BIGINT       NOT NULL COMMENT '评论者',
+    content         TEXT         NOT NULL COMMENT '评论内容（支持emoji）',
+    image_url       VARCHAR(500) DEFAULT NULL COMMENT '可选图片URL',
+    video_url       VARCHAR(500) DEFAULT NULL COMMENT '可选视频URL',
+    parent_id       BIGINT       DEFAULT NULL COMMENT '父评论ID',
+    reply_to_user_id BIGINT      DEFAULT NULL COMMENT '被回复用户ID',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_post_created (post_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='社区评论表';

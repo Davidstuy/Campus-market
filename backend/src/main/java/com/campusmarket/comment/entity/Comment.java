@@ -21,6 +21,12 @@ public class Comment {
     @TableField("content")
     private String content;
 
+    @TableField("image_url")
+    private String imageUrl;
+
+    @TableField("video_url")
+    private String videoUrl;
+
     @TableField("parent_id")
     private Long parentId;
 

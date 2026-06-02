@@ -40,13 +40,17 @@
     </el-result>
 
     <template v-else>
-      <div v-loading="loading" class="product-grid">
-        <ProductCard
-          v-for="p in products"
-          :key="p.id"
-          :product="p"
-          :show-favorite="isLoggedIn"
-        />
+      <div class="product-list-content">
+        <AdSidebar />
+        <div v-loading="loading" class="product-grid">
+          <ProductCard
+            v-for="p in products"
+            :key="p.id"
+            :product="p"
+            :show-favorite="isLoggedIn"
+          />
+        </div>
+        <AdSidebar />
       </div>
       <el-empty v-if="!loading && products.length === 0" description="没有找到商品" />
 
@@ -71,6 +75,7 @@ import { favoriteApi } from '@/api/modules/favorite'
 import type { Product, Category } from '@/types'
 import { SORT_OPTIONS } from '@/utils/constants'
 import ProductCard from '@/components/product/ProductCard.vue'
+import AdSidebar from '@/components/common/AdSidebar.vue'
 
 const keyword = ref('')
 const categoryId = ref<number | undefined>()
@@ -123,6 +128,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.product-list-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  padding: 0 1.5vw;
+}
+
+.product-list-content > .product-grid {
+  flex: 1;
+  min-width: 0;
+}
+
 .page-title {
   font-size: var(--text-2xl);
   font-weight: 700;
@@ -148,8 +167,8 @@ onMounted(async () => {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
   min-height: 200px;
 }
 
@@ -159,9 +178,16 @@ onMounted(async () => {
   justify-content: center;
 }
 
+@media (max-width: 1200px) {
+  .product-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 900px) {
+  .product-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 640px) {
-  .product-grid {
-    grid-template-columns: 1fr;
-  }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+  .product-grid { grid-template-columns: 1fr; }
 }
 </style>

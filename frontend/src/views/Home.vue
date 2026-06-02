@@ -1,6 +1,6 @@
 <template>
   <div class="home-page">
-    <!-- Hero 区域 -->
+    <!-- Hero 区域 (全宽) -->
     <div class="hero-section">
       <div class="hero-content">
         <h1 class="hero-title">校园二手交易</h1>
@@ -8,7 +8,7 @@
       </div>
     </div>
 
-    <!-- 搜索栏 -->
+    <!-- 搜索栏 (全宽) -->
     <div class="search-section">
       <div class="search-bar">
         <el-icon class="search-icon"><Search /></el-icon>
@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <!-- 分类导航 -->
+    <!-- 分类导航 (全宽) -->
     <div class="category-nav">
       <button
         v-for="cat in categories"
@@ -47,7 +47,7 @@
       </template>
     </el-result>
 
-    <!-- 区域标题 + 商品列表 -->
+    <!-- 商品区域 (带侧边栏) -->
     <template v-else>
       <div class="section-header">
         <h2 class="section-title">最新商品</h2>
@@ -56,16 +56,20 @@
         </router-link>
       </div>
 
-      <div v-loading="loading" class="product-grid">
-        <template v-if="!loading && products.length === 0">
-          <el-empty class="empty-state" description="暂无商品，快去发布第一个吧" />
-        </template>
-        <ProductCard
-          v-for="product in products"
-          :key="product.id"
-          :product="product"
-          :show-favorite="auth.isLoggedIn()"
-        />
+      <div class="home-content">
+        <AdSidebar />
+        <div v-loading="loading" class="product-grid">
+          <template v-if="!loading && products.length === 0">
+            <el-empty class="empty-state" description="暂无商品，快去发布第一个吧" />
+          </template>
+          <ProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            :show-favorite="auth.isLoggedIn()"
+          />
+        </div>
+        <AdSidebar />
       </div>
     </template>
   </div>
@@ -80,6 +84,7 @@ import { favoriteApi } from '@/api/modules/favorite'
 import { useAuthStore } from '@/stores/auth'
 import type { Product, Category } from '@/types'
 import ProductCard from '@/components/product/ProductCard.vue'
+import AdSidebar from '@/components/common/AdSidebar.vue'
 
 const auth = useAuthStore()
 const keyword = ref('')
@@ -123,10 +128,28 @@ const search = () => fetchData()
 <style scoped>
 .home-page { padding: 20px 0; }
 
+.home-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  padding: 0 1.5vw;
+}
+
+.home-content > .product-grid {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Hero */
 .hero-section {
   background: var(--gradient-hero);
   border-radius: var(--radius-xl);
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  padding-left: 1.5vw;
+  padding-right: 1.5vw;
   padding: 48px 40px;
   margin-bottom: 32px;
   text-align: center;
@@ -268,8 +291,8 @@ const search = () => fetchData()
 /* 商品网格 */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
   min-height: 200px;
 }
 .empty-state {
@@ -290,9 +313,16 @@ const search = () => fetchData()
     font-size: 24px;
   }
 }
+@media (max-width: 1200px) {
+  .product-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 900px) {
+  .product-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 640px) {
-  .product-grid {
-    grid-template-columns: 1fr;
-  }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+  .product-grid { grid-template-columns: 1fr; }
 }
 </style>

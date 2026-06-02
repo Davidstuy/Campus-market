@@ -121,12 +121,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Override
     public CommentVO create(Long userId, Long productId, String content,
+                             String imageUrl, String videoUrl,
                              Long parentId, Long replyToUserId) {
         if (content == null || content.trim().isEmpty()) {
             throw new BusinessException(400, "评论内容不能为空");
         }
-        if (content.length() > 500) {
-            throw new BusinessException(400, "评论内容不能超过500字");
+        if (content.length() > 2000) {
+            throw new BusinessException(400, "评论内容不能超过2000字");
         }
 
         Product product = productMapper.selectById(productId);
@@ -146,6 +147,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         comment.setProductId(productId);
         comment.setUserId(userId);
         comment.setContent(content.trim());
+        comment.setImageUrl(imageUrl != null && !imageUrl.isBlank() ? imageUrl : null);
+        comment.setVideoUrl(videoUrl != null && !videoUrl.isBlank() ? videoUrl : null);
         comment.setParentId(parentId);
         comment.setReplyToUserId(replyToUserId);
         comment.setCreatedAt(LocalDateTime.now());
@@ -202,6 +205,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         vo.setProductId(c.getProductId());
         vo.setUserId(c.getUserId());
         vo.setContent(c.getContent());
+        vo.setImageUrl(c.getImageUrl());
+        vo.setVideoUrl(c.getVideoUrl());
         vo.setParentId(c.getParentId());
         vo.setReplyToUserId(c.getReplyToUserId());
         vo.setCreatedAt(c.getCreatedAt());

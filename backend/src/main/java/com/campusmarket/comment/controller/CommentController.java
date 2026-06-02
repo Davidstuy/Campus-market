@@ -38,11 +38,14 @@ public class CommentController {
                                         HttpServletRequest request) {
         Long userId = getUserId(request);
         String content = (String) body.get("content");
+        String imageUrl = (String) body.get("imageUrl");
+        String videoUrl = (String) body.get("videoUrl");
         Long parentId = body.get("parentId") != null
                 ? ((Number) body.get("parentId")).longValue() : null;
         Long replyToUserId = body.get("replyToUserId") != null
                 ? ((Number) body.get("replyToUserId")).longValue() : null;
-        CommentVO vo = commentService.create(userId, productId, content, parentId, replyToUserId);
+        CommentVO vo = commentService.create(userId, productId, content,
+                imageUrl, videoUrl, parentId, replyToUserId);
         return ApiResult.success(vo);
     }
 

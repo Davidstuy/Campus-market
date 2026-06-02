@@ -30,6 +30,8 @@ public class ProductVO {
     private Long categoryId;
     private Long sellerId;
     private String status;
+    private String reviewReason;
+    private String riskLevel;
     private String coverImage;
     private String contactWechat;
     private String contactQq;

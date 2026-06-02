@@ -78,6 +78,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // 检查账号是否被封禁
+        if ("BANNED".equals(user.getStatus())) {
+            sendError(response, 403, "账号已被封禁，请联系管理员");
+            return;
+        }
+
+        // 检查管理员路径：需要 ADMIN 角色
+        if (path.contains("/v1/admin/")) {
+            String role = jwtProvider.getRoleFromToken(token);
+            if (!"ADMIN".equals(role)) {
+                sendError(response, 403, "权限不足，需要管理员权限");
+                return;
+            }
+        }
+
         // 清除密码，保证安全
         user.setPassword(null);
 
@@ -113,6 +128,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 分类允许匿名访问
         if ("GET".equalsIgnoreCase(method) && path.contains("/v1/categories")) return true;
+
+        // 社区帖子列表、详情、评论（GET 公开）
+        if ("GET".equalsIgnoreCase(method) && path.contains("/v1/posts")) return true;
+
+        // 社区主题（GET 公开）
+        if ("GET".equalsIgnoreCase(method) && path.contains("/v1/topics")) return true;
+
+        // 常见问题（GET 公开）
+        if ("GET".equalsIgnoreCase(method) && path.contains("/v1/faqs")) return true;
 
         // WebSocket 端点允许匿名访问（认证由 StompAuthInterceptor 处理）
         if (path.contains("/ws")) return true;

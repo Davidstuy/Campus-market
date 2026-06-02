@@ -3,7 +3,7 @@
     <div class="cover-wrapper">
       <el-image
         :src="thumbUrl(product.coverImage)"
-        fit="cover"
+        fit="contain"
         class="cover"
         :preview-src-list="[product.coverImage]"
         :preview-teleported="true"
@@ -124,13 +124,15 @@ const toggleFav = async () => {
 .cover-wrapper {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
+  background: #f9fafb;
 }
 .cover {
   width: 100%;
   height: 100%;
   background: #f1f5f9;
   transition: transform var(--transition-slow);
+  object-fit: contain !important;
 }
 .product-card:hover .cover {
   transform: scale(1.05);
@@ -157,8 +159,8 @@ const toggleFav = async () => {
 
 .fav-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   z-index: 2;
   opacity: 0;
   transform: scale(0.8);
@@ -171,10 +173,10 @@ const toggleFav = async () => {
 }
 
 .info {
-  padding: 12px;
+  padding: 10px;
 }
 .title {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 6px;
@@ -188,7 +190,7 @@ const toggleFav = async () => {
 }
 .price {
   color: var(--el-color-danger);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: -0.3px;
 }

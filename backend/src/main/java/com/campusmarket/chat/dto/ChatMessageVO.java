@@ -10,6 +10,9 @@ public class ChatMessageVO {
     private Long senderId;
     private Long receiverId;
     private String content;
+    private String messageType;
+    private String imageUrl;
+    private String videoUrl;
     private Integer isRead;
     private LocalDateTime createdAt;
 }

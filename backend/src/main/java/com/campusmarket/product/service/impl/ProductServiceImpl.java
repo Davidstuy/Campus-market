@@ -13,6 +13,8 @@ import com.campusmarket.product.entity.ProductImage;
 import com.campusmarket.product.mapper.ProductImageMapper;
 import com.campusmarket.product.mapper.ProductMapper;
 import com.campusmarket.product.service.ProductService;
+import com.campusmarket.review.ContentReviewService;
+import com.campusmarket.review.ReviewResult;
 import com.campusmarket.user.entity.User;
 import com.campusmarket.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     private final ProductImageMapper imageMapper;
     private final UserMapper userMapper;
     private final CategoryMapper categoryMapper;
+    private final ContentReviewService reviewService;
 
     /**
      * 分页查询商品列表
@@ -126,7 +129,11 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     @Cacheable(value = "product_detail", key = "#productId", unless = "#result == null")
     public ProductVO getProductDetail(Long productId) {
         Product product = this.getById(productId);
-        if (product == null || !"ACTIVE".equals(product.getStatus())) {
+        if (product == null) {
+            return null;
+        }
+        // ACTIVE 和 DELISTED 允许公开查看，PENDING_REVIEW 和 REJECTED 仅卖家可看
+        if (!"ACTIVE".equals(product.getStatus()) && !"DELISTED".equals(product.getStatus())) {
             return null;
         }
 
@@ -163,14 +170,19 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
     public ProductVO createProduct(CreateProductRequest request, Long sellerId) {
-        // 1. 保存商品主记录
+        // 1. 内容审核
+        ReviewResult review = reviewService.review(request);
+        String status = "LOW".equals(review.getRiskLevel()) ? "ACTIVE" : "PENDING_REVIEW";
+
+        // 2. 保存商品主记录
         Product product = new Product();
         product.setTitle(request.getTitle());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setCategoryId(request.getCategoryId());
         product.setSellerId(sellerId);
-        product.setStatus("ACTIVE");
+        product.setStatus(status);
+        product.setRiskLevel(review.getRiskLevel());
         product.setCoverImage(request.getCoverImage());
         product.setContactWechat(request.getContactWechat());
         product.setContactQq(request.getContactQq());
@@ -348,6 +360,8 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         dst.setCategoryId(src.getCategoryId());
         dst.setSellerId(src.getSellerId());
         dst.setStatus(src.getStatus());
+        dst.setReviewReason(src.getReviewReason());
+        dst.setRiskLevel(src.getRiskLevel());
         dst.setCoverImage(src.getCoverImage());
         dst.setContactWechat(src.getContactWechat());
         dst.setContactQq(src.getContactQq());

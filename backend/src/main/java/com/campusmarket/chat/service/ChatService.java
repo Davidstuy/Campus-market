@@ -20,4 +20,9 @@ public interface ChatService extends IService<ChatConversation> {
     void markConversationRead(Long conversationId, Long userId);
 
     ConversationVO getOrCreateConversation(Long buyerId, Long sellerId, Long productId);
+
+    void deleteConversation(Long conversationId, Long userId);
+
+    /** 获取或创建客服支持会话 */
+    ConversationVO getOrCreateSupportConversation(Long userId);
 }

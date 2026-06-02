@@ -4,15 +4,21 @@
       <router-link to="/" class="logo">校园二手交易</router-link>
       <nav class="nav-links">
         <router-link to="/products">浏览商品</router-link>
+        <router-link to="/community">社区</router-link>
+        <router-link v-if="auth.user?.role === 'ADMIN'" to="/admin/dashboard" class="admin-link">
+          管理后台
+        </router-link>
       </nav>
       <div class="user-area">
         <template v-if="auth.isLoggedIn()">
           <NotificationBell />
+          <span class="icon-label" @click="$router.push('/notifications')">通知</span>
           <el-badge :value="chatUnread" :max="99" :hidden="!chatUnread">
             <el-icon :size="20" class="chat-nav-icon" @click="$router.push('/chat')">
               <ChatDotRound />
             </el-icon>
           </el-badge>
+          <span class="icon-label" @click="$router.push('/chat')">私信</span>
           <el-dropdown trigger="click">
             <span class="user-trigger">
               <el-avatar :size="32" :src="auth.user?.avatarUrl" />
@@ -191,6 +197,16 @@ const handleLogout = () => {
   color: var(--el-color-primary);
 }
 
+.icon-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.icon-label:hover {
+  color: var(--el-color-primary);
+}
 
 /* 移动端 */
 @media (max-width: 768px) {

@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form">
+  <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form" @keyup.enter="handleLogin">
     <el-alert
       v-if="loginError"
       :title="loginError"

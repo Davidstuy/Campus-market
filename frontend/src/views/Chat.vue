@@ -43,8 +43,22 @@
               <span class="conv-preview">{{ conv.lastMessage || '暂无消息' }}</span>
               <el-badge v-if="conv.unreadCount > 0" :value="conv.unreadCount" :max="99" />
             </div>
-            <div v-if="conv.productTitle" class="conv-product">{{ conv.productTitle }}</div>
+            <div v-if="conv.type === 'SUPPORT'" class="conv-product">平台客服</div>
+            <div v-else-if="conv.productTitle" class="conv-product">{{ conv.productTitle }}</div>
           </div>
+          <el-popconfirm
+            title="确定删除这个会话？"
+            confirm-button-text="删除"
+            cancel-button-text="取消"
+            @confirm="handleDeleteConv(conv.id)"
+            @click.stop
+          >
+            <template #reference>
+              <el-button class="conv-delete-btn" size="small" circle text @click.stop>
+                <el-icon :size="14"><Delete /></el-icon>
+              </el-button>
+            </template>
+          </el-popconfirm>
         </div>
       </div>
     </div>
@@ -58,7 +72,8 @@
         <el-avatar :size="32" :src="activeConversation.otherPartyAvatar" />
         <div class="chat-header-info">
           <span class="chat-header-name">{{ activeConversation.otherPartyName }}</span>
-          <span class="chat-header-product">{{ activeConversation.productTitle }}</span>
+          <span v-if="activeConversation.type === 'SUPPORT'" class="chat-header-product">联系平台客服</span>
+          <span v-else class="chat-header-product">{{ activeConversation.productTitle }}</span>
         </div>
       </div>
 
@@ -74,23 +89,71 @@
           class="msg-bubble"
           :class="{ mine: msg.senderId === currentUserId }"
         >
-          <div class="bubble-content">{{ msg.content }}</div>
+          <!-- 文本消息 -->
+          <div v-if="msg.messageType === 'TEXT' || !msg.messageType" class="bubble-content">{{ msg.content }}</div>
+          <!-- 图片消息 -->
+          <el-image
+            v-else-if="msg.messageType === 'IMAGE' && msg.imageUrl"
+            :src="msg.imageUrl"
+            fit="contain"
+            class="chat-media-img"
+            :preview-src-list="[msg.imageUrl]"
+            :preview-teleported="true"
+          />
+          <!-- 视频消息 -->
+          <video
+            v-else-if="msg.messageType === 'VIDEO' && msg.videoUrl"
+            :src="msg.videoUrl"
+            controls
+            class="chat-media-video"
+            preload="metadata"
+          />
+          <div v-if="msg.content && msg.messageType !== 'TEXT' && !msg.messageType" class="bubble-content">{{ msg.content }}</div>
           <div class="bubble-time">{{ formatTime(msg.createdAt) }}</div>
         </div>
       </div>
 
       <div class="chat-input-area">
-        <el-input
-          v-model="inputText"
-          type="textarea"
-          :rows="1"
-          placeholder="输入消息..."
-          resize="none"
-          @keydown.enter.exact.prevent="sendMessage"
-        />
-        <el-button type="primary" :disabled="!inputText.trim()" @click="sendMessage">
-          发送
-        </el-button>
+        <div class="input-toolbar">
+          <EmojiPicker title="表情" @select="onEmojiSelect" />
+          <el-upload
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            accept="image/*"
+            :show-file-list="false"
+            :on-success="onImageUploaded"
+            :before-upload="beforeMediaUpload"
+          >
+            <el-button size="small" circle title="发送图片">
+              <el-icon><Picture /></el-icon>
+            </el-button>
+          </el-upload>
+          <el-upload
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            accept="video/*"
+            :show-file-list="false"
+            :on-success="onVideoUploaded"
+            :before-upload="beforeMediaUpload"
+          >
+            <el-button size="small" circle title="发送视频">
+              <el-icon><VideoCamera /></el-icon>
+            </el-button>
+          </el-upload>
+        </div>
+        <div class="input-row">
+          <el-input
+            v-model="inputText"
+            type="textarea"
+            :rows="1"
+            placeholder="输入消息..."
+            resize="none"
+            @keydown.enter.exact.prevent="sendTextMessage"
+          />
+          <el-button type="primary" :disabled="!inputText.trim()" @click="sendTextMessage">
+            发送
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -105,8 +168,9 @@
       <div class="seller-panel">
         <el-avatar :size="64" :src="activeConversation.otherPartyAvatar" />
         <h4 class="seller-name">{{ activeConversation.otherPartyName }}</h4>
-        <p class="seller-product" v-if="activeConversation.productTitle">{{ activeConversation.productTitle }}</p>
-        <el-button type="primary" @click="goToShop">进入店铺</el-button>
+        <p v-if="activeConversation.type === 'SUPPORT'" class="seller-product">平台客服</p>
+        <p v-else-if="activeConversation.productTitle" class="seller-product">{{ activeConversation.productTitle }}</p>
+        <el-button v-if="activeConversation.type !== 'SUPPORT'" type="primary" @click="goToShop">进入店铺</el-button>
       </div>
     </div>
 
@@ -120,13 +184,14 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChatDotRound, ChatLineSquare, ArrowLeft } from '@element-plus/icons-vue'
+import { ChatDotRound, ChatLineSquare, ArrowLeft, Picture, VideoCamera, Delete } from '@element-plus/icons-vue'
 import { chatApi } from '@/api/modules/chat'
 import { notificationApi } from '@/api/modules/notification'
 import { useNotificationStore } from '@/stores/notification'
 import { useAuthStore } from '@/stores/auth'
 import type { Conversation, ChatMessage } from '@/types'
 import { ElMessage } from 'element-plus'
+import EmojiPicker from '@/components/common/EmojiPicker.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -138,6 +203,10 @@ const activeConversation = ref<Conversation | null>(null)
 const messages = ref<ChatMessage[]>([])
 const inputText = ref('')
 const loading = ref(false)
+const uploadUrl = '/api/v1/files/upload'
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+}))
 const error = ref(false)
 const loadingMore = ref(false)
 const msgListRef = ref<HTMLElement>()
@@ -232,6 +301,19 @@ const closeChat = () => {
   messages.value = []
 }
 
+const handleDeleteConv = async (convId: number) => {
+  try {
+    await chatApi.deleteConversation(convId)
+    if (activeConversation.value?.id === convId) {
+      closeChat()
+    }
+    conversations.value = conversations.value.filter(c => c.id !== convId)
+    ElMessage.success('会话已删除')
+  } catch {
+    ElMessage.error('删除失败')
+  }
+}
+
 const startPolling = () => {
   stopPolling()
   pollTimer = setInterval(async () => {
@@ -260,29 +342,59 @@ const stopPolling = () => {
   }
 }
 
-const sendMessage = async () => {
+const sendTextMessage = async () => {
   const content = inputText.value.trim()
   if (!content || !activeConversation.value) return
+  inputText.value = ''
+  await doSendMessage('TEXT', content)
+}
+
+const sendMessage = sendTextMessage // keep backward compat
+
+const doSendMessage = async (messageType: 'TEXT' | 'IMAGE' | 'VIDEO', content = '', imageUrl?: string, videoUrl?: string) => {
+  if (!activeConversation.value) return
 
   const receiverId = activeConversation.value.buyerId === currentUserId.value
     ? activeConversation.value.sellerId
     : activeConversation.value.buyerId
 
-  inputText.value = ''
   try {
-    const msg = await chatApi.sendMessage(activeConversation.value.id, receiverId, content)
+    const msg = await chatApi.sendMessage(activeConversation.value.id, receiverId, content, messageType, imageUrl, videoUrl)
     messages.value.push(msg)
     // 更新会话列表
     const conv = conversations.value.find(c => c.id === activeConversation.value!.id)
     if (conv) {
-      conv.lastMessage = content
+      conv.lastMessage = messageType === 'IMAGE' ? '[图片]' : messageType === 'VIDEO' ? '[视频]' : content
       conv.lastMessageAt = msg.createdAt
     }
     scrollToBottom()
   } catch {
     ElMessage.error('发送失败')
-    inputText.value = content
+    if (messageType === 'TEXT') inputText.value = content
   }
+}
+
+const onEmojiSelect = (emoji: string) => {
+  inputText.value += emoji
+}
+
+const beforeMediaUpload = (file: File) => {
+  const isValid = file.type.startsWith('image/') || file.type.startsWith('video/')
+  if (!isValid) {
+    ElMessage.error('只支持图片和视频文件')
+    return false
+  }
+  return true
+}
+
+const onImageUploaded = (response: any) => {
+  const url = response?.url || response?.data?.url
+  if (url) doSendMessage('IMAGE', '', url, undefined)
+}
+
+const onVideoUploaded = (response: any) => {
+  const url = response?.url || response?.data?.url
+  if (url) doSendMessage('VIDEO', '', undefined, url)
 }
 
 const scrollToBottom = () => {
@@ -415,6 +527,13 @@ onUnmounted(() => {
 }
 .conv-item:hover { background: var(--el-color-primary-light-9); }
 .conv-item.active { background: var(--el-color-primary-light-8); }
+.conv-delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.conv-item:hover .conv-delete-btn { opacity: 1; }
+.conv-delete-btn:hover { color: var(--el-color-danger); }
 
 .conv-info { flex: 1; min-width: 0; }
 .conv-top {
@@ -512,13 +631,37 @@ onUnmounted(() => {
   padding: 8px 12px;
   border-top: 1px solid var(--border-color);
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.input-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.input-row {
+  display: flex;
   gap: 8px;
   align-items: flex-end;
-  flex-shrink: 0;
 }
 .chat-input-area :deep(.el-textarea__inner) {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
+}
+
+/* 聊天图片/视频 */
+.chat-media-img {
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.chat-media-video {
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: 10px;
+  background: #000;
 }
 
 /* ===== 右栏：卖家面板 ===== */

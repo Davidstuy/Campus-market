@@ -11,7 +11,9 @@ public interface CommentService extends IService<Comment> {
     Page<CommentVO> listByProduct(Long productId, int page, int size, Long currentUserId);
 
     /** 发表评论/回复，parentId 为 null 表示顶级评论 */
-    CommentVO create(Long userId, Long productId, String content, Long parentId, Long replyToUserId);
+    CommentVO create(Long userId, Long productId, String content,
+                     String imageUrl, String videoUrl,
+                     Long parentId, Long replyToUserId);
 
     /** 对评论投票：vote=1赞 -1踩。已投过则更新 */
     void vote(Long userId, Long commentId, int vote);

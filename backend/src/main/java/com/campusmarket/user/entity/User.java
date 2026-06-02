@@ -36,6 +36,10 @@ public class User {
 
     private String qq;
 
+    private String role;    // USER / ADMIN
+
+    private String status;  // ACTIVE / BANNED
+
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 

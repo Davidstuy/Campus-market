@@ -73,4 +73,18 @@ public class ChatController {
         Long buyerId = getCurrentUserId(request);
         return ApiResult.success(chatService.getOrCreateConversation(buyerId, sellerId, productId));
     }
+
+    @DeleteMapping("/conversations/{id}")
+    public ApiResult<Void> deleteConversation(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = getCurrentUserId(request);
+        chatService.deleteConversation(id, userId);
+        return ApiResult.success();
+    }
+
+    /** 获取或创建客服支持会话 */
+    @PostMapping("/support")
+    public ApiResult<ConversationVO> getOrCreateSupport(HttpServletRequest request) {
+        Long userId = getCurrentUserId(request);
+        return ApiResult.success(chatService.getOrCreateSupportConversation(userId));
+    }
 }

@@ -35,9 +35,12 @@ public class ChatTableInitializer {
                     conversation_id BIGINT       NOT NULL COMMENT '会话ID',
                     sender_id       BIGINT       NOT NULL COMMENT '发送者',
                     receiver_id     BIGINT       NOT NULL COMMENT '接收者',
-                    content         VARCHAR(1000) NOT NULL COMMENT '消息内容',
-                    is_read         TINYINT(1)   DEFAULT 0 COMMENT '是否已读',
-                    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+                    content         VARCHAR(2000) DEFAULT '' COMMENT '消息文本（支持emoji）',
+                    message_type    VARCHAR(10)   NOT NULL DEFAULT 'TEXT' COMMENT 'TEXT/IMAGE/VIDEO',
+                    image_url       VARCHAR(500)  DEFAULT NULL COMMENT '图片URL',
+                    video_url       VARCHAR(500)  DEFAULT NULL COMMENT '视频URL',
+                    is_read         TINYINT(1)    DEFAULT 0 COMMENT '是否已读',
+                    created_at      DATETIME      DEFAULT CURRENT_TIMESTAMP,
                     INDEX idx_conv_created (conversation_id, created_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表'
                 """);

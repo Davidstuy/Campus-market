@@ -1,0 +1,26 @@
+perf: 解决请求间歇性2秒延迟 — localhost IPv6回退 + TCP连接复用
+
+## 根因
+Windows 上 localhost 同时解析到 IPv6 (::1) 和 IPv4 (127.0.0.1)。
+Node.js HTTP 代理优先尝试 IPv6，连接失败后等 TCP SYN 重传超时(2s)
+才回退 IPv4，导致请求间歇性卡 2 秒。
+
+Vite 代理默认每次请求新建 TCP 连接，Windows TIME_WAIT 下端口
+易耗尽，进一步加剧偶发延迟。
+
+## 修复 (3 个文件)
+
+### frontend/vite.config.ts
+- localhost → 127.0.0.1 强制走 IPv4，避免 IPv6 超时回退
+- 新增 http.Agent keep-alive 连接池，复用 TCP 连接不再频繁握手
+- /v1/files 代理规则同步修复
+
+### backend/application.yml
+- Redis host: localhost → 127.0.0.1
+- Redis 连接池 min-idle: 0 → 2 (预热连接)
+- Redis timeout: 3000ms + max-wait: 3000ms (防阻塞)
+- HikariCP connection-timeout: 3000ms (池满时快速失败)
+- 新增 Gzip 压缩 (application/json 等 MIME)
+
+### backend/application-dev.yml
+- MySQL JDBC URL: localhost → 127.0.0.1

@@ -16,6 +16,7 @@ public class ChatConversation {
     private Long buyerId;
     private Long sellerId;
     private Long productId;
+    private String type;
     private String lastMessage;
     @TableField("last_message_at")
     private LocalDateTime lastMessageAt;

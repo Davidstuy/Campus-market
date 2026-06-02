@@ -95,9 +95,71 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'faq',
+          name: 'FAQ',
+          component: () => import('@/views/Faq.vue'),
+        },
+        {
+          path: 'guide',
+          name: 'Guide',
+          component: () => import('@/views/Guide.vue'),
+        },
+        {
           path: 'shop/:sellerId',
           name: 'Shop',
           component: () => import('@/views/Shop.vue'),
+        },
+        {
+          path: 'community',
+          name: 'Community',
+          component: () => import('@/views/community/Community.vue'),
+        },
+        {
+          path: 'community/create',
+          name: 'CreatePost',
+          component: () => import('@/views/community/CreatePost.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'community/:id',
+          name: 'PostDetail',
+          component: () => import('@/views/community/PostDetail.vue'),
+        },
+      ],
+    },
+    {
+      path: '/admin',
+      component: () => import('@/layouts/AdminLayout.vue'),
+      meta: { requiresAdmin: true },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'AdminDashboard' },
+        },
+        {
+          path: 'dashboard',
+          name: 'AdminDashboard',
+          component: () => import('@/views/admin/Dashboard.vue'),
+        },
+        {
+          path: 'review',
+          name: 'AdminReview',
+          component: () => import('@/views/admin/ReviewQueue.vue'),
+        },
+        {
+          path: 'users',
+          name: 'AdminUsers',
+          component: () => import('@/views/admin/UserManagement.vue'),
+        },
+        {
+          path: 'categories',
+          name: 'AdminCategories',
+          component: () => import('@/views/admin/CategoryManagement.vue'),
+        },
+        {
+          path: 'faqs',
+          name: 'AdminFaqs',
+          component: () => import('@/views/admin/FaqManagement.vue'),
         },
       ],
     },
@@ -126,11 +188,38 @@ router.beforeEach((to, _from, next) => {
 
   if (to.meta.requiresAuth && !token) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if (to.meta.guest && token) {
-    next({ name: 'Home' })
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.guest && token) {
+    next({ name: 'Home' })
+    return
+  }
+
+  if (to.meta.requiresAdmin) {
+    if (!token) {
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+      return
+    }
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        if (user.role !== 'ADMIN') {
+          next({ name: 'Home' })
+          return
+        }
+      } else {
+        next({ name: 'Home' })
+        return
+      }
+    } catch {
+      next({ name: 'Home' })
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

@@ -51,12 +51,13 @@ public class JwtProvider {
      *   .signWith(key)    — HMAC-SHA256 签名
      *   .compact()        — 压缩为字符串
      */
-    public String generateToken(Long userId) {
+    public String generateToken(Long userId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -67,12 +68,22 @@ public class JwtProvider {
      * 从 token 中提取用户 ID
      */
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
+        return Long.parseLong(parseClaims(token).getSubject());
+    }
+
+    /**
+     * 从 token 中提取角色
+     */
+    public String getRoleFromToken(String token) {
+        return parseClaims(token).get("role", String.class);
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return Long.parseLong(claims.getSubject());
     }
 
     /**

@@ -31,7 +31,13 @@ public class Product {
     @TableField("seller_id")
     private Long sellerId;
 
-    private String status;  // ACTIVE / SOLD / DELISTED
+    private String status;  // PENDING_REVIEW / ACTIVE / REJECTED / SOLD / DELISTED
+
+    @TableField("review_reason")
+    private String reviewReason;  // 驳回原因
+
+    @TableField("risk_level")
+    private String riskLevel;     // 风险等级: LOW / HIGH
 
     @TableField("cover_image")
     private String coverImage;

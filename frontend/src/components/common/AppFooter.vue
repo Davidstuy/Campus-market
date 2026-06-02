@@ -12,9 +12,9 @@
       </div>
       <div class="footer-col">
         <h4>帮助</h4>
-        <a href="#">交易指南</a>
-        <a href="#">常见问题</a>
-        <a href="#">联系我们</a>
+        <router-link to="/guide">交易指南</router-link>
+        <router-link to="/faq">常见问题</router-link>
+        <a href="#" @click.prevent="contactAdmin">联系我们</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -22,6 +22,28 @@
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { chatApi } from '@/api/modules/chat'
+import { ElMessage } from 'element-plus'
+
+const router = useRouter()
+
+const contactAdmin = async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+  try {
+    const conv = await chatApi.getOrCreateSupportConversation()
+    router.push(`/chat?conversation=${conv.id}`)
+  } catch {
+    ElMessage.error('无法连接客服')
+  }
+}
+</script>
 
 <style scoped>
 .app-footer {

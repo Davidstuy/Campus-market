@@ -76,8 +76,13 @@ public class AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
+        // 检查账号是否被封禁
+        if ("BANNED".equals(user.getStatus())) {
+            throw new BusinessException("账号已被封禁，请联系管理员");
+        }
+
         // 生成 token
-        String token = jwtProvider.generateToken(user.getId());
+        String token = jwtProvider.generateToken(user.getId(), user.getRole());
 
         // 清除密码再返回（安全考虑：绝不把密码密文泄露给前端）
         user.setPassword(null);

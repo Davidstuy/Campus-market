@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form">
+  <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="auth-form" @keyup.enter="handleRegister">
     <el-alert
       v-if="registerError"
       :title="registerError"

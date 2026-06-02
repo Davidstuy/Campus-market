@@ -7,6 +7,8 @@ export interface User {
   phone: string
   wechat: string
   qq: string
+  role: 'USER' | 'ADMIN'
+  status: 'ACTIVE' | 'BANNED'
   createdAt: string
 }
 
@@ -37,7 +39,9 @@ export interface Product {
   price: number
   categoryId: number
   sellerId: number
-  status: 'ACTIVE' | 'SOLD' | 'DELISTED'
+  status: 'PENDING_REVIEW' | 'ACTIVE' | 'REJECTED' | 'SOLD' | 'DELISTED'
+  reviewReason?: string
+  riskLevel?: 'LOW' | 'HIGH'
   coverImage: string
   contactWechat: string
   contactQq: string
@@ -122,6 +126,7 @@ export interface Conversation {
   buyerId: number
   sellerId: number
   productId: number
+  type?: string
   productTitle: string
   productCover: string
   lastMessage: string
@@ -138,6 +143,9 @@ export interface ChatMessage {
   senderId: number
   receiverId: number
   content: string
+  messageType: 'TEXT' | 'IMAGE' | 'VIDEO'
+  imageUrl?: string
+  videoUrl?: string
   isRead: number
   createdAt: string
 }
@@ -148,6 +156,8 @@ export interface Comment {
   productId: number
   userId: number
   content: string
+  imageUrl?: string
+  videoUrl?: string
   parentId: number | null
   replyToUserId: number | null
   replyToUser?: User | null
@@ -159,6 +169,59 @@ export interface Comment {
   myVote: number | null  // 1=赞 -1=踩 null=未投票
 }
 
+// ============ 社区 ============
+export interface Topic {
+  id: number
+  name: string
+  icon: string
+  sortOrder: number
+  postCount: number
+}
+
+export interface Post {
+  id: number
+  userId: number
+  topicId: number
+  title: string
+  content: string
+  createdAt: string
+  updatedAt: string
+  user?: User
+  topic?: Topic
+  media?: PostMedia[]
+  commentCount: number
+}
+
+export interface PostMedia {
+  id: number
+  postId: number
+  mediaType: 'IMAGE' | 'VIDEO'
+  url: string
+  sortOrder: number
+}
+
+export interface PostComment {
+  id: number
+  postId: number
+  userId: number
+  content: string
+  imageUrl: string | null
+  videoUrl: string | null
+  parentId: number | null
+  replyToUserId: number | null
+  createdAt: string
+  user?: User
+  replyToUser?: User | null
+  replies?: PostComment[]
+}
+
+export interface CreatePostRequest {
+  title: string
+  content: string
+  topicId: number
+  media: string[]
+}
+
 // ============ 通知 ============
 export interface Notification {
   id: number
@@ -168,6 +231,16 @@ export interface Notification {
   orderId: number | null
   isRead: number
   createdAt: string
+}
+
+// ============ 常见问题 ============
+export interface Faq {
+  id: number
+  question: string
+  answer: string
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
 }
 
 // ============ 通用 ============

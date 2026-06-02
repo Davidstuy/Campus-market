@@ -13,6 +13,8 @@ public class CommentVO {
     private Long productId;
     private Long userId;
     private String content;
+    private String imageUrl;
+    private String videoUrl;
     private Long parentId;
     private Long replyToUserId;
     private LocalDateTime createdAt;

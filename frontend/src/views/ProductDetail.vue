@@ -29,6 +29,16 @@
       <span>{{ product.title }}</span>
     </div>
 
+    <!-- 下架提示 -->
+    <el-alert
+      v-if="product.status === 'DELISTED'"
+      :title="product.reviewReason || '该商品已被下架'"
+      type="warning"
+      show-icon
+      :closable="false"
+      class="delisted-notice"
+    />
+
     <div class="detail-main">
       <div class="images-section">
         <el-image
@@ -99,7 +109,7 @@
             @click="requireLogin(contactSeller)"
             :loading="contactLoading"
           >
-            联系卖家
+            客服
           </el-button>
         </div>
 
@@ -121,18 +131,52 @@
           v-model="commentContent"
           type="textarea"
           :rows="3"
-          maxlength="500"
+          maxlength="2000"
           show-word-limit
-          placeholder="写下你的想法..."
+          placeholder="写下你的想法... 支持表情和图片/视频"
+          @keyup.enter.ctrl="submitComment"
         />
-        <el-button
-          type="primary"
-          :loading="commentSubmitting"
-          :disabled="!commentContent.trim()"
-          @click="submitComment"
-        >
-          发表评论
-        </el-button>
+        <div class="comment-form-toolbar">
+          <div class="toolbar-left">
+            <EmojiPicker title="表情" @select="(e: string) => commentContent += e" />
+            <el-upload
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              accept="image/*"
+              :show-file-list="false"
+              :on-success="onCommentImageSuccess"
+            >
+              <el-button size="small" circle title="上传图片"><el-icon><Picture /></el-icon></el-button>
+            </el-upload>
+            <el-upload
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              accept="video/*"
+              :show-file-list="false"
+              :on-success="onCommentVideoSuccess"
+            >
+              <el-button size="small" circle title="上传视频"><el-icon><VideoCamera /></el-icon></el-button>
+            </el-upload>
+          </div>
+          <span class="reply-hint">Ctrl + Enter 发送</span>
+          <el-button
+            type="primary"
+            :loading="commentSubmitting"
+            :disabled="!commentContent.trim()"
+            @click="submitComment"
+          >
+            发表评论
+          </el-button>
+        </div>
+        <!-- 附件预览 -->
+        <div v-if="commentImageUrl" class="attach-preview">
+          <el-image :src="commentImageUrl" fit="cover" class="attach-thumb" />
+          <el-button size="small" circle @click="commentImageUrl = null"><el-icon><Close /></el-icon></el-button>
+        </div>
+        <div v-if="commentVideoUrl" class="attach-preview">
+          <span class="attach-label">视频已选择</span>
+          <el-button size="small" circle @click="commentVideoUrl = null"><el-icon><Close /></el-icon></el-button>
+        </div>
       </div>
       <div v-else class="comment-login-hint">
         <router-link :to="`/login?redirect=${encodeURIComponent(route.fullPath)}`">登录</router-link>
@@ -184,6 +228,9 @@
 
           <!-- 内容 -->
           <p class="comment-content">{{ c.content }}</p>
+          <!-- 评论图片/视频 -->
+          <el-image v-if="c.imageUrl" :src="c.imageUrl" fit="contain" class="comment-media-img" :preview-src-list="[c.imageUrl]" :preview-teleported="true" />
+          <video v-if="c.videoUrl" :src="c.videoUrl" controls class="comment-media-video" preload="metadata" />
 
           <!-- 底部：赞/踩 在右侧 -->
           <div class="comment-footer">
@@ -257,6 +304,9 @@
                 <span class="reply-time">{{ formatTime(r.createdAt) }}</span>
               </div>
               <p class="reply-content">{{ r.content }}</p>
+              <!-- 回复图片/视频 -->
+              <el-image v-if="r.imageUrl" :src="r.imageUrl" fit="contain" class="comment-media-img" :preview-src-list="[r.imageUrl]" :preview-teleported="true" />
+              <video v-if="r.videoUrl" :src="r.videoUrl" controls class="comment-media-video" preload="metadata" />
               <!-- 回复的赞/踩 -->
               <div class="comment-footer">
                 <div class="vote-group">
@@ -305,7 +355,8 @@ import { favoriteApi } from '@/api/modules/favorite'
 import { chatApi } from '@/api/modules/chat'
 import { commentApi } from '@/api/modules/comment'
 import type { Product, ProductImage, Comment } from '@/types'
-import { ArrowRight, UserFilled } from '@element-plus/icons-vue'
+import { ArrowRight, UserFilled, Picture, VideoCamera, Close } from '@element-plus/icons-vue'
+import EmojiPicker from '@/components/common/EmojiPicker.vue'
 import { PRODUCT_STATUS } from '@/utils/constants'
 
 const route = useRoute()
@@ -343,6 +394,20 @@ const commentLoading = ref(false)
 const commentError = ref(false)
 const commentContent = ref('')
 const commentSubmitting = ref(false)
+const commentImageUrl = ref<string | null>(null)
+const commentVideoUrl = ref<string | null>(null)
+const uploadUrl = '/api/v1/files/upload'
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+}))
+const onCommentImageSuccess = (response: any) => {
+  const url = response?.url || response?.data?.url
+  if (url) commentImageUrl.value = url
+}
+const onCommentVideoSuccess = (response: any) => {
+  const url = response?.url || response?.data?.url
+  if (url) commentVideoUrl.value = url
+}
 const replyTarget = ref<Comment | null>(null)
 const replyToUser = ref<{ id: number; nickname: string } | null>(null)
 const replyContent = ref('')
@@ -410,10 +475,12 @@ const submitComment = async () => {
   commentSubmitting.value = true
   try {
     const id = Number(route.params.id)
-    const newComment = await commentApi.create(id, commentContent.value.trim())
+    const newComment = await commentApi.create(id, commentContent.value.trim(), undefined, undefined, commentImageUrl.value, commentVideoUrl.value)
     comments.value.unshift(newComment)
     commentTotal.value++
     commentContent.value = ''
+    commentImageUrl.value = null
+    commentVideoUrl.value = null
   } catch { /* ignore */ }
   finally {
     commentSubmitting.value = false
@@ -539,6 +606,10 @@ onMounted(() => {
   gap: 8px;
   align-items: center;
 }
+.delisted-notice {
+  margin-bottom: 16px;
+}
+
 .breadcrumb a {
   color: var(--text-secondary);
   transition: color var(--transition-fast);
@@ -685,6 +756,45 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+.comment-form-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.toolbar-left {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.attach-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.attach-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.attach-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+.comment-media-img {
+  max-width: 260px;
+  max-height: 200px;
+  margin-top: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.comment-media-video {
+  max-width: 280px;
+  max-height: 200px;
+  margin-top: 8px;
+  border-radius: 8px;
+}
 .comment-form {
   display: flex;
   flex-direction: column;

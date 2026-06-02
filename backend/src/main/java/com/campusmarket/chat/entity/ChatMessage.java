@@ -17,6 +17,12 @@ public class ChatMessage {
     private Long senderId;
     private Long receiverId;
     private String content;
+    @TableField("message_type")
+    private String messageType;
+    @TableField("image_url")
+    private String imageUrl;
+    @TableField("video_url")
+    private String videoUrl;
     private Integer isRead;
     @TableField("created_at")
     private LocalDateTime createdAt;
